@@ -1,7 +1,7 @@
 
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, ExternalLink, Users, Trophy, Calendar, Github, Globe, FileText } from "lucide-react"
+import { ArrowLeft, ExternalLink, Users, Trophy, Calendar, GitBranch, Globe, FileText } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -146,7 +146,7 @@ export default async function ProjectDetailPage({
                 {project.github_url && (
                   <Button variant="secondary" asChild>
                     <a href={project.github_url} target="_blank" rel="noopener noreferrer">
-                      <Github className="mr-2 h-4 w-4" />
+                      <GitBranch className="mr-2 h-4 w-4" />
                       GitHub Repository
                       <ExternalLink className="ml-2 h-3 w-3" />
                     </a>
