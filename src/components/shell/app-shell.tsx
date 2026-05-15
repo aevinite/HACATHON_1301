@@ -42,6 +42,12 @@ const getNavItems = (role: "admin" | "judge" | "team"): NavItem[] => {
         icon: <Trophy className="h-5 w-5" />,
       },
       {
+        id: "manage-users",
+        title: "Manage Users",
+        href: "/dashboard/admin/users",
+        icon: <Users className="h-5 w-5" />,
+      },
+      {
         id: "manage-judges",
         title: "Manage Judges",
         href: "/dashboard/admin/judges",
