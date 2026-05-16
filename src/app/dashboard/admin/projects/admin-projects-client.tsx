@@ -29,6 +29,12 @@ interface AdminProjectsClientProps {
   initialProjects: ProjectWithDetails[]
   initialHackathonId?: string
   hackathonName?: string
+  summary: {
+    totalProjects: number
+    submittedProjects: number
+    scoredProjects: number
+    teamsWithProjects: number
+  }
 }
 
 function formatDate(date: string) {
@@ -86,9 +92,10 @@ function ProjectModerationButton({ projectId, action, label, variant, confirmMes
   )
 }
 
-export default function AdminProjectsClient({ initialProjects, initialHackathonId, hackathonName }: AdminProjectsClientProps) {
+export default function AdminProjectsClient({ initialProjects, initialHackathonId, hackathonName, summary }: AdminProjectsClientProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [scoreFilter, setScoreFilter] = useState("all")
+  const [statusFilter, setStatusFilter] = useState("all")
   const [hackathonIdFilter, setHackathonIdFilter] = useState(initialHackathonId)
 
   const filteredProjects = useMemo(() => {
@@ -104,11 +111,15 @@ export default function AdminProjectsClient({ initialProjects, initialHackathonI
         (scoreFilter === "scored" && project.average_score !== null) ||
         (scoreFilter === "not_scored" && project.average_score === null)
       
+      const matchesStatus = 
+        statusFilter === "all" ||
+        project.status === statusFilter
+      
       const matchesHackathon = !hackathonIdFilter || project.hackathons?.id === hackathonIdFilter
       
-      return matchesSearch && matchesScore && matchesHackathon
+      return matchesSearch && matchesScore && matchesStatus && matchesHackathon
     })
-  }, [initialProjects, searchQuery, scoreFilter, hackathonIdFilter])
+  }, [initialProjects, searchQuery, scoreFilter, statusFilter, hackathonIdFilter])
 
   return (
     <div className="space-y-6 min-h-screen grid-bg">
@@ -135,6 +146,26 @@ export default function AdminProjectsClient({ initialProjects, initialHackathonI
         description="View all projects submitted to hackathons on the platform"
       />
 
+      {/* Summary Boxes */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="glass rounded-2xl p-6 border border-white/5">
+          <p className="text-sm text-slate-400 mb-1">Total Projects</p>
+          <p className="text-2xl font-bold text-white">{summary.totalProjects}</p>
+        </div>
+        <div className="glass rounded-2xl p-6 border border-white/5">
+          <p className="text-sm text-slate-400 mb-1">Submitted Projects</p>
+          <p className="text-2xl font-bold text-white">{summary.submittedProjects}</p>
+        </div>
+        <div className="glass rounded-2xl p-6 border border-white/5">
+          <p className="text-sm text-slate-400 mb-1">Scored Projects</p>
+          <p className="text-2xl font-bold text-white">{summary.scoredProjects}</p>
+        </div>
+        <div className="glass rounded-2xl p-6 border border-white/5">
+          <p className="text-sm text-slate-400 mb-1">Teams With Projects</p>
+          <p className="text-2xl font-bold text-white">{summary.teamsWithProjects}</p>
+        </div>
+      </div>
+
       {/* Search & Filter */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
@@ -154,6 +185,17 @@ export default function AdminProjectsClient({ initialProjects, initialHackathonI
             <SelectItem value="all">All</SelectItem>
             <SelectItem value="scored">Scored</SelectItem>
             <SelectItem value="not_scored">Not scored</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="draft">Draft</SelectItem>
+            <SelectItem value="submitted">Submitted</SelectItem>
+            <SelectItem value="disqualified">Disqualified</SelectItem>
           </SelectContent>
         </Select>
       </div>

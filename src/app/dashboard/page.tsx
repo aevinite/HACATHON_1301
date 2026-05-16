@@ -28,6 +28,7 @@ export default async function DashboardPage() {
   const scores = await scoresRepo.findAll()
   const profilesRepo = new ProfilesRepository()
   const judges = await profilesRepo.findAllJudges()
+  const allProfiles = await profilesRepo.findAll()
 
   // Participant/Team Dashboard
   if (role === "team") {
@@ -119,18 +120,6 @@ export default async function DashboardPage() {
                 </div>
                 <p className="text-sm text-slate-400">
                   View your submitted projects
-                </p>
-              </div>
-            </Link>
-
-            <Link href="/dashboard/leaderboard" className="block">
-              <div className="glass rounded-2xl p-6 border border-white/5 hover:border-blue-500/30 transition-all h-full cursor-pointer">
-                <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <h3 className="text-lg font-semibold text-white">Leaderboard</h3>
-                  <Award className="h-5 w-5 text-slate-400" />
-                </div>
-                <p className="text-sm text-slate-400">
-                  View project rankings
                 </p>
               </div>
             </Link>
@@ -337,7 +326,7 @@ export default async function DashboardPage() {
             <div>
               <h1 className="font-bold text-2xl sm:text-3xl text-white">Admin Dashboard</h1>
               <p className="text-slate-400 mt-1.5">
-                Manage hackathons, projects, and platform settings
+                Use this dashboard to manage hackathons, users, judging, teams, and submissions.
               </p>
             </div>
           </div>
@@ -381,8 +370,8 @@ export default async function DashboardPage() {
               <div className="rounded-2xl p-5 bg-gradient-to-br from-yellow-600/20 to-yellow-500/5 border border-yellow-500/20">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-slate-400 text-sm mb-1">Total Reviews</p>
-                    <p className="font-bold text-3xl text-white">{scores.length}</p>
+                    <p className="text-slate-400 text-sm mb-1">Total Users</p>
+                    <p className="font-bold text-3xl text-white">{allProfiles.length}</p>
                   </div>
                 </div>
               </div>
@@ -411,6 +400,11 @@ export default async function DashboardPage() {
               <Button asChild variant="secondary" className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
                 <Link href="/dashboard/admin/judges">
                   Manage Judges
+                </Link>
+              </Button>
+              <Button asChild variant="secondary" className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
+                <Link href="/dashboard/admin/users">
+                  Manage Users
                 </Link>
               </Button>
               <Button asChild variant="secondary" className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">

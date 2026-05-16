@@ -11,7 +11,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
 import { Trophy, Plus, Trash2, AlertTriangle, Edit, Eye } from "lucide-react"
 import { deleteHackathonAction } from "@/features/hackathons/server/actions"
+import { updateResultVisibilityAction } from "@/features/hackathons/server/actions"
 import { AdminPageHeader } from "@/components/admin/admin-page-header"
+import { 
+  getHackathonLifecycleStatus, 
+  getHackathonStatusLabel, 
+  getHackathonStatusBadgeClass,
+  getHackathonGroupBucket,
+  getHackathonGroupLabel,
+  isHackathonNotStarted
+} from "@/lib/format-hackathon-status"
 
 type Hackathon = {
   id: string
@@ -24,6 +33,9 @@ type Hackathon = {
   created_at: string
   team_count: number
   project_count: number
+  results_published: boolean
+  results_visible_to_judges: boolean
+  results_visible_to_participants: boolean
 }
 
 interface AdminHackathonsClientProps {
@@ -44,9 +56,9 @@ const formatDate = (date: string | null) => {
 const getStatusLabel = (status: string) => {
   switch (status) {
     case "draft":
-      return "Draft"
+      return "Not Started"
     case "registration":
-      return "Registration Open"
+      return "Not Started"
     case "submission":
       return "Running"
     case "judging":
@@ -72,6 +84,39 @@ const getStatusBadgeClass = (status: string) => {
       return "bg-slate-500/10 text-slate-400 border-slate-500/20"
     default:
       return "bg-white/5 text-slate-400 border-white/10"
+  }
+}
+
+function getResultStatusLabel(hackathon: Hackathon): string {
+  if (hackathon.results_visible_to_participants) {
+    return "Published"
+  } else if (hackathon.results_visible_to_judges) {
+    return "Published to Judges Only"
+  } else {
+    return "Not Published"
+  }
+}
+
+function getResultStatusBadgeClass(status: string) {
+  switch (status) {
+    case "Not Published":
+      return "bg-orange-500/10 text-orange-400 border-orange-500/20"
+    case "Published to Judges Only":
+      return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20"
+    case "Published":
+      return "bg-green-500/10 text-green-400 border-green-500/20"
+    default:
+      return "bg-white/5 text-slate-400 border-white/10"
+  }
+}
+
+function getVisibilityValue(hackathon: Hackathon): "private" | "judges" | "published" {
+  if (hackathon.results_visible_to_participants) {
+    return "published"
+  } else if (hackathon.results_visible_to_judges) {
+    return "judges"
+  } else {
+    return "private"
   }
 }
 
@@ -135,18 +180,70 @@ function DeleteHackathonButton({ hackathonId, hackathonName }: { hackathonId: st
   )
 }
 
+function ResultVisibilityControls({ hackathon }: { hackathon: Hackathon }) {
+  const [selectedVisibility, setSelectedVisibility] = useState<string>(getVisibilityValue(hackathon))
+  const [state, formAction, isPending] = useActionState(updateResultVisibilityAction, { error: undefined, success: undefined })
+  const formRef = useRef<HTMLFormElement>(null)
+
+  function handleSave() {
+    if (formRef.current) {
+      formRef.current.requestSubmit()
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <Badge variant="default" className={getResultStatusBadgeClass(getResultStatusLabel(hackathon))}>
+        {getResultStatusLabel(hackathon)}
+      </Badge>
+      <form ref={formRef} action={formAction} className="flex items-center gap-2">
+        <input type="hidden" name="hackathonId" value={hackathon.id} />
+        <Select 
+          value={selectedVisibility} 
+          onValueChange={setSelectedVisibility}
+          name="visibility"
+        >
+          <SelectTrigger className="w-[200px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="private">Not Published</SelectItem>
+            <SelectItem value="judges">Published to Judges Only</SelectItem>
+            <SelectItem value="published">Published</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button 
+          variant="default" 
+          size="sm" 
+          onClick={handleSave} 
+          disabled={isPending}
+        >
+          {isPending ? "Saving..." : "Save"}
+        </Button>
+      </form>
+      {state.error && (
+        <p className="text-xs text-red-400">{state.error}</p>
+      )}
+    </div>
+  )
+}
+
 export default function AdminHackathonsClient({ initialHackathons }: AdminHackathonsClientProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
 
   const stats = useMemo(() => {
     const total = initialHackathons.length
-    const draft = initialHackathons.filter(h => h.status === "draft").length
-    const active = initialHackathons.filter(h => 
-      ["registration", "submission", "judging"].includes(h.status)
+    const notStarted = initialHackathons.filter(h => 
+      isHackathonNotStarted(h as any)
     ).length
-    const completed = initialHackathons.filter(h => h.status === "completed").length
-    return { total, draft, active, completed }
+    const active = initialHackathons.filter(h => 
+      getHackathonGroupBucket(h as any) === "current_active"
+    ).length
+    const completed = initialHackathons.filter(h => 
+      getHackathonGroupBucket(h as any) === "finished_completed"
+    ).length
+    return { total, notStarted, active, completed }
   }, [initialHackathons])
 
   const filteredHackathons = useMemo(() => {
@@ -157,6 +254,83 @@ export default function AdminHackathonsClient({ initialHackathons }: AdminHackat
       return matchesSearch && matchesStatus
     })
   }, [initialHackathons, searchQuery, statusFilter])
+
+  const currentActiveHackathons = useMemo(() => 
+    filteredHackathons.filter(h => getHackathonGroupBucket(h as any) === "current_active"),
+  [filteredHackathons])
+
+  const upcomingNotStartedHackathons = useMemo(() => 
+    filteredHackathons.filter(h => getHackathonGroupBucket(h as any) === "upcoming_not_started"),
+  [filteredHackathons])
+
+  const finishedCompletedHackathons = useMemo(() => 
+    filteredHackathons.filter(h => getHackathonGroupBucket(h as any) === "finished_completed"),
+  [filteredHackathons])
+
+  const renderHackathonCards = (hackathons: Hackathon[]) => (
+    <div className="grid gap-4">
+      {hackathons.map((hackathon) => (
+        <div key={hackathon.id} className="glass rounded-2xl p-6 border border-white/10 hover:border-blue-500/40 transition-all hover:shadow-xl hover:shadow-blue-500/10">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h3 className="text-xl font-bold text-white">{hackathon.name}</h3>
+                <div className="flex items-center gap-2">
+                  <Badge variant="default" className={getHackathonStatusBadgeClass(getHackathonLifecycleStatus(hackathon as any))}>
+                    {getHackathonStatusLabel(getHackathonLifecycleStatus(hackathon as any))}
+                  </Badge>
+                  {hackathon.is_public && (
+                    <Badge variant="default" className="bg-blue-500/10 text-blue-400 border-blue-500/20">
+                      Public
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <p className="text-sm text-slate-400 line-clamp-2 mb-4">
+                {hackathon.description}
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="rounded-xl p-3 bg-white/5 border border-white/5">
+                  <p className="text-xs text-slate-500 mb-1">Teams</p>
+                  <p className="text-xl font-bold text-white">{hackathon.team_count}</p>
+                </div>
+                <div className="rounded-xl p-3 bg-white/5 border border-white/5">
+                  <p className="text-xs text-slate-500 mb-1">Projects</p>
+                  <p className="text-xl font-bold text-white">{hackathon.project_count}</p>
+                </div>
+                <div className="rounded-xl p-3 bg-white/5 border border-white/5">
+                  <p className="text-xs text-slate-500 mb-1">Start</p>
+                  <p className="text-sm font-medium text-slate-300">{formatDate(hackathon.start_date)}</p>
+                </div>
+                <div className="rounded-xl p-3 bg-white/5 border border-white/5">
+                  <p className="text-xs text-slate-500 mb-1">Deadline</p>
+                  <p className="text-sm font-medium text-slate-300">{formatDate(hackathon.submission_deadline)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="pt-4 mt-4 border-t border-white/10 flex flex-wrap gap-2 justify-between items-center">
+            <ResultVisibilityControls hackathon={hackathon} />
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" size="sm" asChild className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
+                <Link href={`/dashboard/hackathons/${hackathon.id}?returnTo=/dashboard/admin/hackathons&returnLabel=Back%20to%20Manage%20Hackathons`}>
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
+                </Link>
+              </Button>
+              <Button variant="secondary" size="sm" asChild className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
+                <Link href={`/dashboard/admin/hackathons/${hackathon.id}/edit?returnTo=/dashboard/admin/hackathons&returnLabel=Back%20to%20Manage%20Hackathons`}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Link>
+              </Button>
+              <DeleteHackathonButton hackathonId={hackathon.id} hackathonName={hackathon.name} />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 
   return (
     <div className="space-y-6 min-h-screen grid-bg">
@@ -190,8 +364,8 @@ export default function AdminHackathonsClient({ initialHackathons }: AdminHackat
         <div className="rounded-2xl p-5 bg-gradient-to-br from-yellow-600/20 to-yellow-500/5 border border-yellow-500/20">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-slate-400 text-sm mb-1">Draft</p>
-              <p className="font-bold text-3xl text-white">{stats.draft}</p>
+              <p className="text-slate-400 text-sm mb-1">Not Started</p>
+              <p className="font-bold text-3xl text-white">{stats.notStarted}</p>
             </div>
           </div>
         </div>
@@ -219,9 +393,9 @@ export default function AdminHackathonsClient({ initialHackathons }: AdminHackat
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="registration">Registration</SelectItem>
-            <SelectItem value="submission">Submission</SelectItem>
+            <SelectItem value="draft">Not Started</SelectItem>
+            <SelectItem value="registration">Not Started</SelectItem>
+            <SelectItem value="submission">Running</SelectItem>
             <SelectItem value="judging">Judging</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
           </SelectContent>
@@ -242,64 +416,33 @@ export default function AdminHackathonsClient({ initialHackathons }: AdminHackat
           </p>
         </div>
       ) : (
-        <div className="grid gap-4">
-          {filteredHackathons.map((hackathon) => (
-            <div key={hackathon.id} className="glass rounded-2xl p-6 border border-white/10 hover:border-blue-500/40 transition-all hover:shadow-xl hover:shadow-blue-500/10">
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-xl font-bold text-white">{hackathon.name}</h3>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="default" className={getStatusBadgeClass(hackathon.status)}>
-                        {getStatusLabel(hackathon.status)}
-                      </Badge>
-                      {hackathon.is_public && (
-                        <Badge variant="default" className="bg-blue-500/10 text-blue-400 border-blue-500/20">
-                          Public
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-sm text-slate-400 line-clamp-2 mb-4">
-                    {hackathon.description}
-                  </p>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="rounded-xl p-3 bg-white/5 border border-white/5">
-                      <p className="text-xs text-slate-500 mb-1">Teams</p>
-                      <p className="text-xl font-bold text-white">{hackathon.team_count}</p>
-                    </div>
-                    <div className="rounded-xl p-3 bg-white/5 border border-white/5">
-                      <p className="text-xs text-slate-500 mb-1">Projects</p>
-                      <p className="text-xl font-bold text-white">{hackathon.project_count}</p>
-                    </div>
-                    <div className="rounded-xl p-3 bg-white/5 border border-white/5">
-                      <p className="text-xs text-slate-500 mb-1">Start</p>
-                      <p className="text-sm font-medium text-slate-300">{formatDate(hackathon.start_date)}</p>
-                    </div>
-                    <div className="rounded-xl p-3 bg-white/5 border border-white/5">
-                      <p className="text-xs text-slate-500 mb-1">Deadline</p>
-                      <p className="text-sm font-medium text-slate-300">{formatDate(hackathon.submission_deadline)}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="pt-4 mt-4 border-t border-white/10 flex flex-wrap gap-2 justify-end">
-                <Button variant="secondary" size="sm" asChild className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
-                  <Link href={`/dashboard/hackathons/${hackathon.id}?returnTo=/dashboard/admin/hackathons&returnLabel=Back%20to%20Manage%20Hackathons`}>
-                    <Eye className="h-4 w-4 mr-2" />
-                    View Details
-                  </Link>
-                </Button>
-                <Button variant="secondary" size="sm" asChild className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
-                  <Link href={`/dashboard/admin/hackathons/${hackathon.id}/edit?returnTo=/dashboard/admin/hackathons&returnLabel=Back%20to%20Manage%20Hackathons`}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Link>
-                </Button>
-                <DeleteHackathonButton hackathonId={hackathon.id} hackathonName={hackathon.name} />
-              </div>
+        <div className="space-y-10">
+          {currentActiveHackathons.length > 0 && (
+            <div>
+              <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                <span className="text-blue-400">●</span> {getHackathonGroupLabel("current_active")}
+              </h2>
+              {renderHackathonCards(currentActiveHackathons)}
             </div>
-          ))}
+          )}
+          
+          {upcomingNotStartedHackathons.length > 0 && (
+            <div>
+              <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                <span className="text-green-400">●</span> {getHackathonGroupLabel("upcoming_not_started")}
+              </h2>
+              {renderHackathonCards(upcomingNotStartedHackathons)}
+            </div>
+          )}
+          
+          {finishedCompletedHackathons.length > 0 && (
+            <div>
+              <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                <span className="text-emerald-400">●</span> {getHackathonGroupLabel("finished_completed")}
+              </h2>
+              {renderHackathonCards(finishedCompletedHackathons)}
+            </div>
+          )}
         </div>
       )}
     </div>

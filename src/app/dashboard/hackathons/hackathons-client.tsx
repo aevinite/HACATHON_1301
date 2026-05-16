@@ -10,8 +10,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Database } from "@/types/supabase"
+import {
+  getHackathonLifecycleStatus,
+  getHackathonGroupBucket,
+  getHackathonGroupLabel
+} from "@/lib/format-hackathon-status"
 
-type Hackathon = Database["public"]["Tables"]["hackathons"]["Row"]
+type Hackathon = Database["public"]["Tables"]["hackathons"]["Row"] & {
+  userTeam?: any | null
+  isParticipating?: boolean
+}
 
 interface HackathonsClientProps {
   initialHackathons: Hackathon[]
@@ -28,18 +36,46 @@ export default function HackathonsClient({ initialHackathons, showCreateButton =
         hackathon.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (hackathon.description && hackathon.description.toLowerCase().includes(searchQuery.toLowerCase()))
       
-      const matchesStatus = statusFilter === "all" || hackathon.status === statusFilter
+      const lifecycleStatus = getHackathonLifecycleStatus(hackathon)
+      const matchesStatus = statusFilter === "all" || lifecycleStatus === statusFilter
       
       return matchesSearch && matchesStatus
     })
   }, [initialHackathons, searchQuery, statusFilter])
+
+  const currentActiveHackathons = useMemo(() => 
+    filteredHackathons.filter(h => getHackathonGroupBucket(h) === "current_active"),
+  [filteredHackathons])
+
+  const upcomingNotStartedHackathons = useMemo(() => 
+    filteredHackathons.filter(h => getHackathonGroupBucket(h) === "upcoming_not_started"),
+  [filteredHackathons])
+
+  const finishedCompletedHackathons = useMemo(() => 
+    filteredHackathons.filter(h => getHackathonGroupBucket(h) === "finished_completed"),
+  [filteredHackathons])
+
+  const renderHackathonCards = (hackathons: Hackathon[]) => (
+    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      {hackathons.map((hackathon) => (
+        <HackathonCard 
+          key={hackathon.id} 
+          hackathon={hackathon} 
+          returnTo="/dashboard/hackathons" 
+          returnLabel="Back to Hackathons"
+          isParticipating={hackathon.isParticipating || false}
+          team={hackathon.userTeam}
+        />
+      ))}
+    </div>
+  )
 
   return (
     <div className="p-6 md:p-8 lg:p-10">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 lg:mb-10">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Hackathons</h1>
+            <h1 className="text-3xl font-bold tracking tracking-tight">Hackathons</h1>
             <p className="text-muted-foreground mt-2 text-base">
               Explore and participate in hackathons
             </p>
@@ -55,7 +91,7 @@ export default function HackathonsClient({ initialHackathons, showCreateButton =
         </div>
 
         {/* Search & Filter */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row gap-4 mb-10">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -71,9 +107,9 @@ export default function HackathonsClient({ initialHackathons, showCreateButton =
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="registration">Registration</SelectItem>
-              <SelectItem value="submission">Submission</SelectItem>
+              <SelectItem value="registration_open">Registration Open</SelectItem>
+              <SelectItem value="not_started">Not Started</SelectItem>
+              <SelectItem value="running">Running</SelectItem>
               <SelectItem value="judging">Judging</SelectItem>
               <SelectItem value="completed">Completed</SelectItem>
             </SelectContent>
@@ -94,16 +130,34 @@ export default function HackathonsClient({ initialHackathons, showCreateButton =
             />
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {filteredHackathons.map((hackathon) => (
-              <HackathonCard 
-                key={hackathon.id} 
-                hackathon={hackathon} 
-                returnTo="/dashboard/hackathons" 
-                returnLabel="Back to Hackathons" 
-              />
-            ))}
-          </div>
+          <div className="space-y-10">
+            {currentActiveHackathons.length > 0 && (
+            <div>
+              <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                <span className="text-blue-400">●</span> {getHackathonGroupLabel("current_active")}
+              </h2>
+              {renderHackathonCards(currentActiveHackathons)}
+            </div>
+          )}
+          
+          {upcomingNotStartedHackathons.length > 0 && (
+            <div>
+              <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                <span className="text-green-400">●</span> {getHackathonGroupLabel("upcoming_not_started")}
+              </h2>
+              {renderHackathonCards(upcomingNotStartedHackathons)}
+            </div>
+          )}
+          
+          {finishedCompletedHackathons.length > 0 && (
+            <div>
+              <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                <span className="text-emerald-400">●</span> {getHackathonGroupLabel("finished_completed")}
+              </h2>
+              {renderHackathonCards(finishedCompletedHackathons)}
+            </div>
+          )}
+        </div>
         )}
       </div>
     </div>

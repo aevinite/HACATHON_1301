@@ -120,7 +120,7 @@ const getNavItems = (role: "admin" | "judge" | "team"): NavItem[] => {
     },
     {
       id: "leaderboard",
-      title: "Leaderboard",
+      title: "Results",
       href: "/dashboard/leaderboard",
       icon: <Award className="h-5 w-5" />,
     },

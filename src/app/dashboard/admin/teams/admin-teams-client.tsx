@@ -185,7 +185,15 @@ export default function AdminTeamsClient({ initialTeams, initialHackathonId, hac
                   </div>
                 </div>
               </div>
-              <div className="pt-4 mt-4 border-t border-white/10 flex justify-end">
+              <div className="pt-4 mt-4 border-t border-white/10 flex flex-wrap gap-2 justify-end">
+                {team.hackathons && (
+                  <Button variant="secondary" size="sm" asChild className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
+                    <Link href={`/dashboard/hackathons/${team.hackathon_id}?returnTo=/dashboard/admin/teams&returnLabel=Back%20to%20Manage%20Teams`}>
+                      <Trophy className="h-4 w-4 mr-2" />
+                      View Hackathon
+                    </Link>
+                  </Button>
+                )}
                 <Button variant="default" size="sm" asChild className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-cyan-500 text-white shadow-lg shadow-blue-500/20">
                   <Link href={`/dashboard/teams/${team.id}?returnTo=/dashboard/admin/teams&returnLabel=Back%20to%20Manage%20Teams`}>
                     <Eye className="h-4 w-4 mr-2" />

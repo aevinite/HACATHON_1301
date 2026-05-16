@@ -7,13 +7,10 @@ import { createClient } from "@/lib/supabase-server"
 import { ProfilesRepository } from "@/data/repositories/profiles-repository"
 
 export async function updateUserRoleAction(prevState: { success?: boolean; error?: string }, formData: FormData): Promise<{ success?: boolean; error?: string }> {
-  console.log("========== updateUserRoleAction START ==========")
-  
   const supabase = await createClient()
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
   
   if (!user) {
-    console.log("updateUserRoleAction: No user")
     redirect("/login")
   }
   
@@ -21,14 +18,11 @@ export async function updateUserRoleAction(prevState: { success?: boolean; error
   const currentUserProfile = await profilesRepo.findByUserId(user.id)
   
   if (!currentUserProfile || currentUserProfile.role !== "admin") {
-    console.log("updateUserRoleAction: Not admin")
     redirect("/dashboard")
   }
   
   const userId = formData.get("userId") as string
   const role = formData.get("role") as string
-  
-  console.log("updateUserRoleAction: Params:", { userId, role })
   
   if (!userId || !role) {
     return { error: "User ID and role are required" }
@@ -37,14 +31,24 @@ export async function updateUserRoleAction(prevState: { success?: boolean; error
   if (!["admin", "team", "judge"].includes(role)) {
     return { error: "Invalid role" }
   }
+
+  // Prevent admin from removing their own admin role
+  if (userId === user.id && role !== "admin") {
+    const allProfiles = await profilesRepo.findAll()
+    const adminCount = allProfiles.filter(p => p.role === "admin").length
+    
+    if (adminCount <= 1) {
+      return { error: "You cannot remove your own admin role because you are the only admin" }
+    }
+  }
   
   try {
-    const result = await profilesRepo.updateRole(userId, role as any)
-    console.log("updateUserRoleAction: Success:", result)
+    await profilesRepo.updateRole(userId, role as any)
     revalidatePath("/dashboard/admin/users")
+    revalidatePath("/dashboard/admin/judges")
+    revalidatePath("/dashboard")
     return { success: true }
-  } catch (error) {
-    console.error("updateUserRoleAction: ERROR:", error)
+  } catch {
     return { error: "Failed to update user role" }
   }
 }

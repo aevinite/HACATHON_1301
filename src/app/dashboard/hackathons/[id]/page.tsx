@@ -16,6 +16,11 @@ import { JoinHackathonButton } from "@/features/hackathons/components/join-butto
 import Link from "next/link"
 import { Calendar, Clock, ArrowLeft, FileText, Lightbulb, Award, Users } from "lucide-react"
 import { createClient } from "@/lib/supabase-server"
+import { 
+  getHackathonLifecycleStatus, 
+  getHackathonStatusLabel, 
+  getHackathonStatusBadgeClass 
+} from "@/lib/format-hackathon-status"
 
 export default async function HackathonDetailPage({
   params,
@@ -47,60 +52,37 @@ export default async function HackathonDetailPage({
     notFound()
   }
 
+  const lifecycle = getHackathonLifecycleStatus(hackathon!)
+  const lifecycleLabel = getHackathonStatusLabel(lifecycle)
+  const lifecycleBadgeClass = getHackathonStatusBadgeClass(lifecycle)
+
   function getCurrentPhase() {
-    const h = hackathon!
-    const registrationStartDate = h.registration_start_date ? new Date(h.registration_start_date) : null
-    const registrationDeadline = h.registration_deadline ? new Date(h.registration_deadline) : null
-    const startDate = h.start_date ? new Date(h.start_date) : null
-    const submissionDeadline = h.submission_deadline ? new Date(h.submission_deadline) : null
-    const judgingDeadline = h.judging_deadline ? new Date(h.judging_deadline) : null
-
-    if (!startDate) return "Event not scheduled yet"
-
-    if (registrationStartDate && today < registrationStartDate) {
-      return "Upcoming Registration"
-    }
-
-    if (registrationStartDate && registrationDeadline && today >= registrationStartDate && today < registrationDeadline) {
-      return "Registration Open"
-    }
-
-    if (registrationDeadline && startDate && today >= registrationDeadline && today < startDate) {
-      return "Registration Closed / Waiting to Start"
-    }
-
-    if (startDate && submissionDeadline && today >= startDate && today < submissionDeadline) {
-      return "Hackathon Running"
-    }
-
-    if (submissionDeadline && judgingDeadline && today >= submissionDeadline && today < judgingDeadline) {
-      return "Submission Closed / Judging"
-    }
-
-    if (judgingDeadline && today >= judgingDeadline) {
-      return "Completed"
-    }
-
-    return h.status.charAt(0).toUpperCase() + h.status.slice(1)
+    return lifecycleLabel
   }
 
   function getStatusMessage() {
     const h = hackathon!
     if (!h.start_date) return "Event not scheduled yet"
-    const startDate = new Date(h.start_date)
-    
-    if (today < startDate) {
-      const diffTime = startDate.getTime() - today.getTime()
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-      if (diffDays === 1) return "Starts tomorrow"
-      if (diffDays > 1) return `Starts in ${diffDays} days`
+
+    switch (lifecycle) {
+      case "registration_open":
+        return "Registration is open"
+      case "not_started":
+        const startDate = new Date(h.start_date)
+        const diffTime = startDate.getTime() - today.getTime()
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+        if (diffDays === 1) return "Starts tomorrow"
+        if (diffDays > 1) return `Starts in ${diffDays} days`
+        return "Hackathon has not started yet"
+      case "running":
+        return "Hackathon is running"
+      case "judging":
+        return "Judging is in progress"
+      case "completed":
+        return "Hackathon is completed"
+      default:
+        return lifecycleLabel
     }
-    
-    if (h.status === "registration") return "Registration open"
-    if (h.status === "submission") return "Submissions open"
-    if (h.status === "judging") return "Judging in progress"
-    if (h.status === "completed") return "Event ended"
-    return "Live now"
   }
 
   const getSafeReturnTo = (returnTo: string | string[] | undefined): string => {
@@ -120,21 +102,14 @@ export default async function HackathonDetailPage({
 
   const user = profile ? { id: profile.id } : null
   let isParticipating = false
+  let userTeam = null
   if (user) {
-    const team = await teamsRepository.findByHackathonAndUserId(id, user.id)
-    isParticipating = !!team
+    userTeam = await teamsRepository.findByHackathonAndUserId(id, user.id)
+    isParticipating = !!userTeam
   }
   const userRole = profile?.role || "team"
 
   const projects = await projectsRepository.findByHackathonId(id)
-
-  const statusColors = {
-    draft: "secondary",
-    registration: "default",
-    submission: "default",
-    judging: "default",
-    completed: "outline",
-  }
 
   const formatDate = (date: string | null) => {
     if (!date) return "—"
@@ -188,8 +163,8 @@ export default async function HackathonDetailPage({
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-3">
-                <Badge variant={statusColors[hackathon.status as keyof typeof statusColors] as any}>
-                  {hackathon.status.charAt(0).toUpperCase() + hackathon.status.slice(1)}
+                <Badge variant="outline" className={lifecycleBadgeClass}>
+                  {lifecycleLabel}
                 </Badge>
                 <Badge variant="outline">{getStatusMessage()}</Badge>
               </div>
@@ -210,6 +185,8 @@ export default async function HackathonDetailPage({
                   <JoinHackathonButton
                     hackathonId={hackathon.id}
                     isParticipating={isParticipating}
+                    hackathon={hackathon}
+                    team={userTeam}
                   />
                 )}
                 {userRole === "admin" && (
@@ -420,8 +397,8 @@ export default async function HackathonDetailPage({
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Status</p>
                 <div className="flex items-center gap-2">
-                  <Badge variant={statusColors[hackathon.status as keyof typeof statusColors] as any}>
-                    {hackathon.status.charAt(0).toUpperCase() + hackathon.status.slice(1)}
+                  <Badge variant="outline" className={lifecycleBadgeClass}>
+                    {lifecycleLabel}
                   </Badge>
                 </div>
               </div>

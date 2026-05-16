@@ -33,9 +33,25 @@ export default async function AdminProjectsPage({ params, searchParams }: AdminP
     }
   }
 
+  // Calculate summary numbers
+  const totalProjects = projects.length
+  const submittedProjects = projects.filter(p => p.status === "submitted").length
+  const scoredProjects = projects.filter(p => p.average_score !== null).length
+  const teamsWithProjects = new Set(projects.filter(p => p.teams !== null).map(p => p.teams?.name)).size
+
   return (
     <div className="p-6 md:p-8">
-      <AdminProjectsClient initialProjects={projects} initialHackathonId={hackathonId} hackathonName={hackathonName} />
+      <AdminProjectsClient 
+        initialProjects={projects} 
+        initialHackathonId={hackathonId} 
+        hackathonName={hackathonName} 
+        summary={{
+          totalProjects,
+          submittedProjects,
+          scoredProjects,
+          teamsWithProjects
+        }}
+      />
     </div>
   )
 }

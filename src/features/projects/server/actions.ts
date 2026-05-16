@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase-server"
 import { ProjectsRepository } from "@/data/repositories/projects-repository"
 import { TeamsRepository } from "@/data/repositories/teams-repository"
 import { ProfilesRepository } from "@/data/repositories/profiles-repository"
+import { HackathonsRepository } from "@/data/repositories/hackathons-repository"
+import { isProjectSubmissionAllowed } from "@/lib/format-hackathon-status"
 
 export async function createProjectAction(formData: FormData) {
   console.log("========== createProjectAction START ==========")
@@ -38,6 +40,14 @@ export async function createProjectAction(formData: FormData) {
   }
 
   const projectsRepo = new ProjectsRepository()
+  const hackathonsRepo = new HackathonsRepository()
+  
+  const hackathon = await hackathonsRepo.findById(hackathonId)
+  if (!hackathon || !isProjectSubmissionAllowed(hackathon as any)) {
+    console.log("createProjectAction: Project submission not allowed")
+    console.log("========== createProjectAction END (SUBMISSION NOT ALLOWED) ==========")
+    redirect(`/dashboard/teams/${teamId}`)
+  }
   const teamsRepo = new TeamsRepository()
 
   try {

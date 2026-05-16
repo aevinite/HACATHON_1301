@@ -60,6 +60,17 @@ export class TeamsRepository extends BaseRepository<Team> {
     return teams || []
   }
 
+  async findByHackathonId(hackathonId: string): Promise<Team[]> {
+    const supabase = await this.getClient()
+    const { data } = await supabase
+      .from("teams")
+      .select("*")
+      .eq("hackathon_id", hackathonId)
+      .order("created_at", { ascending: false })
+
+    return data || []
+  }
+
   async findByHackathonAndUserId(hackathonId: string, userId: string): Promise<Team | null> {
     const supabase = await this.getClient()
     

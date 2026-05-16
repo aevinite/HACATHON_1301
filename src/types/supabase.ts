@@ -58,6 +58,9 @@ export interface Database {
           created_by: string
           created_at: string
           updated_at: string
+          results_published: boolean
+          results_visible_to_judges: boolean
+          results_visible_to_participants: boolean
         }
         Insert: {
           id?: string
@@ -78,6 +81,9 @@ export interface Database {
           created_by: string
           created_at?: string
           updated_at?: string
+          results_published?: boolean
+          results_visible_to_judges?: boolean
+          results_visible_to_participants?: boolean
         }
         Update: {
           id?: string
@@ -98,6 +104,9 @@ export interface Database {
           created_by?: string
           created_at?: string
           updated_at?: string
+          results_published?: boolean
+          results_visible_to_judges?: boolean
+          results_visible_to_participants?: boolean
         }
       }
       categories: {

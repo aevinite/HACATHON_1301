@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase-server"
 import { loginSchema, signupSchema } from "../schemas"
 import { AUTH_ROUTES, PROTECTED_ROUTES } from "../constants"
+import { ProfilesRepository } from "@/data/repositories/profiles-repository"
 
 export async function loginAction(prevState: { error: string }, formData: FormData): Promise<{ error: string }> {
   console.log("========== loginAction START ==========")
@@ -109,4 +110,26 @@ export async function logoutAction() {
   console.log("logoutAction: Redirecting to login")
   console.log("========== logoutAction END ==========")
   redirect(AUTH_ROUTES.LOGIN)
+}
+
+export async function updateProfileAction(prevState: { success?: boolean; error?: string }, formData: FormData): Promise<{ success?: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    redirect(AUTH_ROUTES.LOGIN)
+  }
+  
+  const fullName = formData.get("fullName") as string
+  
+  try {
+    const profilesRepo = new ProfilesRepository()
+    await profilesRepo.updateProfile(user.id, { full_name: fullName || null })
+    
+    revalidatePath("/dashboard/settings")
+    revalidatePath("/dashboard")
+    return { success: true }
+  } catch {
+    return { error: "Failed to update profile" }
+  }
 }

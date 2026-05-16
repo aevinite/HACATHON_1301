@@ -51,6 +51,7 @@ interface AdminJudgesClientProps {
 
 export default function AdminJudgesClient({ initialJudges, hackathons }: AdminJudgesClientProps) {
   const [searchQuery, setSearchQuery] = useState("")
+  const [filter, setFilter] = useState("all")
   const [selectedHackathons, setSelectedHackathons] = useState<{ [key: string]: string }>({})
   const router = useRouter()
 
@@ -66,9 +67,13 @@ export default function AdminJudgesClient({ initialJudges, hackathons }: AdminJu
       const matchesSearch = 
         (judge.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
         (judge.email?.toLowerCase().includes(searchQuery.toLowerCase()) || false)
-      return matchesSearch
+      const matchesFilter = 
+        filter === "all" ||
+        (filter === "assigned" && judge.assignments.length > 0) ||
+        (filter === "unassigned" && judge.assignments.length === 0)
+      return matchesSearch && matchesFilter
     })
-  }, [initialJudges, searchQuery])
+  }, [initialJudges, searchQuery, filter])
 
   const handleAssign = async (judgeId: string) => {
     const hackathonId = selectedHackathons[judgeId]
@@ -101,7 +106,7 @@ export default function AdminJudgesClient({ initialJudges, hackathons }: AdminJu
         />
         <div className="mt-4 rounded-lg border border-blue-500/20 bg-blue-500/5 p-4">
           <p className="text-sm text-blue-400">
-            Judge accounts must exist before assignment. Auth invite setup can be added later.
+            To add a judge, first create/sign up a user, then convert their role to judge from Manage Users.
           </p>
         </div>
       </div>
@@ -134,14 +139,26 @@ export default function AdminJudgesClient({ initialJudges, hackathons }: AdminJu
         </div>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search judges by name or email..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search judges by name or email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={filter} onValueChange={setFilter}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="Filter by assignment" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Judges</SelectItem>
+            <SelectItem value="assigned">Assigned</SelectItem>
+            <SelectItem value="unassigned">Unassigned</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {filteredJudges.length === 0 ? (

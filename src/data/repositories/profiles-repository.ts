@@ -53,5 +53,17 @@ export class ProfilesRepository extends BaseRepository<Profile> {
 
     return data
   }
+
+  async updateProfile(userId: string, data: { full_name?: string | null }): Promise<Profile | null> {
+    const supabase = await this.getClient()
+    const { data: profile } = await supabase
+      .from("profiles")
+      .update(data as ProfileUpdate)
+      .eq("id", userId)
+      .select("*")
+      .maybeSingle()
+
+    return profile
+  }
 }
 

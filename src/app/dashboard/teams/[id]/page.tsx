@@ -11,6 +11,7 @@ import { TeamMembersRepository } from "@/data/repositories/team-members-reposito
 import { HackathonsRepository } from "@/data/repositories/hackathons-repository"
 import { ProjectsRepository } from "@/data/repositories/projects-repository"
 import { createClient } from "@/lib/supabase-server"
+import { isProjectSubmissionAllowed, getSubmissionStatusText } from "@/lib/format-hackathon-status"
 
 export default async function TeamDetailPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const teamsRepo = new TeamsRepository()
@@ -162,10 +163,14 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
             ) : (
               <div className="space-y-3">
                 <p className="text-muted-foreground">No project submitted yet.</p>
-                {hackathon && (
+                {hackathon && isProjectSubmissionAllowed(hackathon as any) ? (
                   <Link href={`/dashboard/teams/${id}/project/new?hackathon_id=${hackathon.id}`}>
                     <Button>Submit Project</Button>
                   </Link>
+                ) : (
+                  hackathon && (
+                    <p className="text-sm text-yellow-400 font-medium">{getSubmissionStatusText(hackathon as any)}</p>
+                  )
                 )}
               </div>
             )}

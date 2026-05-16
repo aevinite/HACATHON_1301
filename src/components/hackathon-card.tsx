@@ -5,24 +5,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import type { Database } from "@/types/supabase"
+import { getHackathonLifecycleStatus, getHackathonStatusLabel, getHackathonStatusBadgeClass } from "@/lib/format-hackathon-status"
+import { JoinHackathonButton } from "@/features/hackathons/components/join-button"
 
 type Hackathon = Database["public"]["Tables"]["hackathons"]["Row"]
+type Team = Database["public"]["Tables"]["teams"]["Row"]
 
 interface HackathonCardProps {
   hackathon: Hackathon
   showCurrentIndicator?: boolean
   returnTo?: string
   returnLabel?: string
+  isParticipating?: boolean
+  team?: Team | null
 }
 
-export function HackathonCard({ hackathon, showCurrentIndicator = true, returnTo, returnLabel }: HackathonCardProps) {
-  const statusColors = {
-    draft: "bg-slate-500",
-    registration: "bg-blue-500",
-    submission: "bg-yellow-500",
-    judging: "bg-purple-500",
-    completed: "bg-green-500",
-  }
+export function HackathonCard({ hackathon, showCurrentIndicator = true, returnTo, returnLabel, isParticipating = false, team }: HackathonCardProps) {
+  const lifecycleStatus = getHackathonLifecycleStatus(hackathon)
 
   const formatDate = (date: string | null) => {
     if (!date) return "TBD"
@@ -46,15 +45,21 @@ export function HackathonCard({ hackathon, showCurrentIndicator = true, returnTo
   })()
 
   return (
-    <Card className={`overflow-hidden transition-all duration-200 hover:shadow-md hover:border-primary/20 group ${isCurrentlyActive ? 'border-2 border-blue-500/50' : ''}`}>
-      {isCurrentlyActive && showCurrentIndicator && (
-        <div className="bg-blue-500 text-white text-xs font-bold px-3 py-1 text-center uppercase tracking-wider">
-          Current Event
-        </div>
-      )}
-      {hackathon.banner_image && (
-        <div className="h-48 w-full bg-cover bg-center group-hover:scale-105 transition-transform duration-500" style={{ backgroundImage: `url(${hackathon.banner_image})` }} />
-      )}
+    <Card className={`overflow-hidden transition-all duration-200 hover:shadow-md hover:border-primary/20 group ${isCurrentlyActive ? 'border-2 border-blue-500/50' : ''} flex flex-col h-full`}>
+      <div className="h-6">
+        {isCurrentlyActive && showCurrentIndicator && (
+          <div className="bg-blue-500 text-white text-xs font-bold px-3 py-1 text-center uppercase tracking-wider h-full flex items-center justify-center">
+            Current Event
+          </div>
+        )}
+      </div>
+      <div className="h-48 w-full bg-cover bg-center group-hover:scale-105 transition-transform duration-500" style={{ backgroundImage: hackathon.banner_image ? `url(${hackathon.banner_image})` : 'none' }}>
+        {!hackathon.banner_image && (
+          <div className="h-full w-full bg-slate-800/50 flex items-center justify-center">
+            <Trophy className="h-12 w-12 text-slate-600/50" />
+          </div>
+        )}
+      </div>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1.5 flex-1 min-w-0">
@@ -63,8 +68,8 @@ export function HackathonCard({ hackathon, showCurrentIndicator = true, returnTo
               {hackathon.description}
             </CardDescription>
           </div>
-          <Badge className={statusColors[hackathon.status as keyof typeof statusColors]} variant="secondary">
-            {hackathon.status.charAt(0).toUpperCase() + hackathon.status.slice(1)}
+          <Badge className={getHackathonStatusBadgeClass(lifecycleStatus)} variant="secondary">
+            {getHackathonStatusLabel(lifecycleStatus)}
           </Badge>
         </div>
       </CardHeader>
@@ -82,12 +87,20 @@ export function HackathonCard({ hackathon, showCurrentIndicator = true, returnTo
           </div>
         </div>
       </CardContent>
-      <CardFooter className="pt-0">
-        <Button asChild variant="secondary" size="sm" className="w-full">
+      <CardFooter className="pt-0 flex flex-col sm:flex-row gap-2 mt-auto">
+        <Button asChild variant="secondary" size="sm" className="flex-1">
           <Link href={`/dashboard/hackathons/${hackathon.id}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}&returnLabel=${encodeURIComponent(returnLabel || "Back to Hackathons")}` : ""}`}>
             View Details
           </Link>
         </Button>
+        <div className="flex-1">
+          <JoinHackathonButton
+            hackathonId={hackathon.id}
+            isParticipating={isParticipating}
+            hackathon={hackathon}
+            team={team}
+          />
+        </div>
       </CardFooter>
     </Card>
   )

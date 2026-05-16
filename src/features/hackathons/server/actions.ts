@@ -102,6 +102,9 @@ export async function createHackathonAction(prevState: FormState, formData: Form
     registration_deadline: registrationDeadline ? new Date(registrationDeadline).toISOString() : null,
     judging_deadline: judgingDeadline ? new Date(judgingDeadline).toISOString() : null,
     banner_image: bannerImage || null,
+    results_published: false,
+    results_visible_to_judges: false,
+    results_visible_to_participants: false,
   }
   
   console.log("createHackathonAction: Insert payload:", payload)
@@ -331,4 +334,314 @@ export async function deleteHackathonAction(prevState: { error?: string }, formD
   console.log("========== deleteHackathonAction END (SUCCESS) ==========")
   revalidatePath("/dashboard/admin/hackathons")
   redirect("/dashboard/admin/hackathons")
+}
+
+export async function publishResultsToJudgesAction(prevState: { error?: string; success?: boolean }, formData: FormData): Promise<{ error?: string; success?: boolean }> {
+  console.log("========== publishResultsToJudgesAction START ==========")
+  
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    console.log("publishResultsToJudgesAction: No user")
+    console.log("========== publishResultsToJudgesAction END (NO USER) ==========")
+    redirect("/login")
+  }
+  
+  const profilesRepo = new ProfilesRepository()
+  const currentUserProfile = await profilesRepo.findByUserId(user.id)
+  
+  if (!currentUserProfile || currentUserProfile.role !== "admin") {
+    console.log("publishResultsToJudgesAction: Not admin")
+    console.log("========== publishResultsToJudgesAction END (NOT ADMIN) ==========")
+    redirect("/dashboard")
+  }
+  
+  const hackathonId = formData.get("hackathonId") as string
+  
+  if (!hackathonId) {
+    console.log("publishResultsToJudgesAction: Missing hackathonId")
+    console.log("========== publishResultsToJudgesAction END (MISSING ID) ==========")
+    return { error: "Hackathon ID is required" }
+  }
+  
+  const repository = new HackathonsRepository()
+  const hackathon = await repository.findById(hackathonId)
+  
+  if (!hackathon) {
+    console.log("publishResultsToJudgesAction: Hackathon not found")
+    console.log("========== publishResultsToJudgesAction END (NOT FOUND) ==========")
+    return { error: "Hackathon not found" }
+  }
+  
+  try {
+    await repository.update(hackathonId, {
+      results_visible_to_judges: true
+    })
+    
+    revalidatePath("/dashboard/leaderboard")
+    revalidatePath("/dashboard/admin/hackathons")
+    revalidatePath(`/dashboard/hackathons/${hackathonId}`)
+    
+    console.log("publishResultsToJudgesAction: Success!")
+    console.log("========== publishResultsToJudgesAction END (SUCCESS) ==========")
+    return { success: true }
+  } catch (error) {
+    console.log("publishResultsToJudgesAction: ERROR:", error)
+    console.log("========== publishResultsToJudgesAction END (ERROR) ==========")
+    return { error: "Failed to publish results to judges" }
+  }
+}
+
+export async function unpublishResultsFromJudgesAction(prevState: { error?: string; success?: boolean }, formData: FormData): Promise<{ error?: string; success?: boolean }> {
+  console.log("========== unpublishResultsFromJudgesAction START ==========")
+  
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    console.log("unpublishResultsFromJudgesAction: No user")
+    console.log("========== unpublishResultsFromJudgesAction END (NO USER) ==========")
+    redirect("/login")
+  }
+  
+  const profilesRepo = new ProfilesRepository()
+  const currentUserProfile = await profilesRepo.findByUserId(user.id)
+  
+  if (!currentUserProfile || currentUserProfile.role !== "admin") {
+    console.log("unpublishResultsFromJudgesAction: Not admin")
+    console.log("========== unpublishResultsFromJudgesAction END (NOT ADMIN) ==========")
+    redirect("/dashboard")
+  }
+  
+  const hackathonId = formData.get("hackathonId") as string
+  
+  if (!hackathonId) {
+    console.log("unpublishResultsFromJudgesAction: Missing hackathonId")
+    console.log("========== unpublishResultsFromJudgesAction END (MISSING ID) ==========")
+    return { error: "Hackathon ID is required" }
+  }
+  
+  const repository = new HackathonsRepository()
+  const hackathon = await repository.findById(hackathonId)
+  
+  if (!hackathon) {
+    console.log("unpublishResultsFromJudgesAction: Hackathon not found")
+    console.log("========== unpublishResultsFromJudgesAction END (NOT FOUND) ==========")
+    return { error: "Hackathon not found" }
+  }
+  
+  try {
+    await repository.update(hackathonId, {
+      results_visible_to_judges: false
+    })
+    
+    revalidatePath("/dashboard/leaderboard")
+    revalidatePath("/dashboard/admin/hackathons")
+    revalidatePath(`/dashboard/hackathons/${hackathonId}`)
+    
+    console.log("unpublishResultsFromJudgesAction: Success!")
+    console.log("========== unpublishResultsFromJudgesAction END (SUCCESS) ==========")
+    return { success: true }
+  } catch (error) {
+    console.log("unpublishResultsFromJudgesAction: ERROR:", error)
+    console.log("========== unpublishResultsFromJudgesAction END (ERROR) ==========")
+    return { error: "Failed to unpublish results from judges" }
+  }
+}
+
+export async function publishResultsToParticipantsAction(prevState: { error?: string; success?: boolean }, formData: FormData): Promise<{ error?: string; success?: boolean }> {
+  console.log("========== publishResultsToParticipantsAction START ==========")
+  
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    console.log("publishResultsToParticipantsAction: No user")
+    console.log("========== publishResultsToParticipantsAction END (NO USER) ==========")
+    redirect("/login")
+  }
+  
+  const profilesRepo = new ProfilesRepository()
+  const currentUserProfile = await profilesRepo.findByUserId(user.id)
+  
+  if (!currentUserProfile || currentUserProfile.role !== "admin") {
+    console.log("publishResultsToParticipantsAction: Not admin")
+    console.log("========== publishResultsToParticipantsAction END (NOT ADMIN) ==========")
+    redirect("/dashboard")
+  }
+  
+  const hackathonId = formData.get("hackathonId") as string
+  
+  if (!hackathonId) {
+    console.log("publishResultsToParticipantsAction: Missing hackathonId")
+    console.log("========== publishResultsToParticipantsAction END (MISSING ID) ==========")
+    return { error: "Hackathon ID is required" }
+  }
+  
+  const repository = new HackathonsRepository()
+  const hackathon = await repository.findById(hackathonId)
+  
+  if (!hackathon) {
+    console.log("publishResultsToParticipantsAction: Hackathon not found")
+    console.log("========== publishResultsToParticipantsAction END (NOT FOUND) ==========")
+    return { error: "Hackathon not found" }
+  }
+  
+  try {
+    await repository.update(hackathonId, {
+      results_visible_to_judges: true,
+      results_visible_to_participants: true
+    })
+    
+    revalidatePath("/dashboard/leaderboard")
+    revalidatePath("/dashboard/admin/hackathons")
+    revalidatePath(`/dashboard/hackathons/${hackathonId}`)
+    
+    console.log("publishResultsToParticipantsAction: Success!")
+    console.log("========== publishResultsToParticipantsAction END (SUCCESS) ==========")
+    return { success: true }
+  } catch (error) {
+    console.log("publishResultsToParticipantsAction: ERROR:", error)
+    console.log("========== publishResultsToParticipantsAction END (ERROR) ==========")
+    return { error: "Failed to publish results to participants" }
+  }
+}
+
+export async function unpublishResultsFromParticipantsAction(prevState: { error?: string; success?: boolean }, formData: FormData): Promise<{ error?: string; success?: boolean }> {
+  console.log("========== unpublishResultsFromParticipantsAction START ==========")
+  
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    console.log("unpublishResultsFromParticipantsAction: No user")
+    console.log("========== unpublishResultsFromParticipantsAction END (NO USER) ==========")
+    redirect("/login")
+  }
+  
+  const profilesRepo = new ProfilesRepository()
+  const currentUserProfile = await profilesRepo.findByUserId(user.id)
+  
+  if (!currentUserProfile || currentUserProfile.role !== "admin") {
+    console.log("unpublishResultsFromParticipantsAction: Not admin")
+    console.log("========== unpublishResultsFromParticipantsAction END (NOT ADMIN) ==========")
+    redirect("/dashboard")
+  }
+  
+  const hackathonId = formData.get("hackathonId") as string
+  
+  if (!hackathonId) {
+    console.log("unpublishResultsFromParticipantsAction: Missing hackathonId")
+    console.log("========== unpublishResultsFromParticipantsAction END (MISSING ID) ==========")
+    return { error: "Hackathon ID is required" }
+  }
+  
+  const repository = new HackathonsRepository()
+  const hackathon = await repository.findById(hackathonId)
+  
+  if (!hackathon) {
+    console.log("unpublishResultsFromParticipantsAction: Hackathon not found")
+    console.log("========== unpublishResultsFromParticipantsAction END (NOT FOUND) ==========")
+    return { error: "Hackathon not found" }
+  }
+  
+  try {
+    await repository.update(hackathonId, {
+      results_visible_to_participants: false
+    })
+    
+    revalidatePath("/dashboard/leaderboard")
+    revalidatePath("/dashboard/admin/hackathons")
+    revalidatePath(`/dashboard/hackathons/${hackathonId}`)
+    
+    console.log("unpublishResultsFromParticipantsAction: Success!")
+    console.log("========== unpublishResultsFromParticipantsAction END (SUCCESS) ==========")
+    return { success: true }
+  } catch (error) {
+    console.log("unpublishResultsFromParticipantsAction: ERROR:", error)
+    console.log("========== unpublishResultsFromParticipantsAction END (ERROR) ==========")
+    return { error: "Failed to unpublish results from participants" }
+  }
+}
+
+export async function updateResultVisibilityAction(prevState: { error?: string; success?: boolean }, formData: FormData): Promise<{ error?: string; success?: boolean }> {
+  console.log("========== updateResultVisibilityAction START ==========")
+  
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    console.log("updateResultVisibilityAction: No user")
+    console.log("========== updateResultVisibilityAction END (NO USER) ==========")
+    redirect("/login")
+  }
+  
+  const profilesRepo = new ProfilesRepository()
+  const currentUserProfile = await profilesRepo.findByUserId(user.id)
+  
+  if (!currentUserProfile || currentUserProfile.role !== "admin") {
+    console.log("updateResultVisibilityAction: Not admin")
+    console.log("========== updateResultVisibilityAction END (NOT ADMIN) ==========")
+    redirect("/dashboard")
+  }
+  
+  const hackathonId = formData.get("hackathonId") as string
+  const visibility = formData.get("visibility") as string
+  
+  if (!hackathonId || !visibility) {
+    console.log("updateResultVisibilityAction: Missing hackathonId or visibility")
+    console.log("========== updateResultVisibilityAction END (MISSING DATA) ==========")
+    return { error: "Hackathon ID and visibility are required" }
+  }
+  
+  const repository = new HackathonsRepository()
+  const hackathon = await repository.findById(hackathonId)
+  
+  if (!hackathon) {
+    console.log("updateResultVisibilityAction: Hackathon not found")
+    console.log("========== updateResultVisibilityAction END (NOT FOUND) ==========")
+    return { error: "Hackathon not found" }
+  }
+  
+  let updatePayload: any = {}
+  
+  switch (visibility) {
+    case "private":
+      updatePayload = {
+        results_visible_to_judges: false,
+        results_visible_to_participants: false
+      }
+      break
+    case "judges":
+      updatePayload = {
+        results_visible_to_judges: true,
+        results_visible_to_participants: false
+      }
+      break
+    case "published":
+      updatePayload = {
+        results_visible_to_judges: true,
+        results_visible_to_participants: true
+      }
+      break
+    default:
+      return { error: "Invalid visibility option" }
+  }
+  
+  try {
+    await repository.update(hackathonId, updatePayload)
+    
+    revalidatePath("/dashboard/leaderboard")
+    revalidatePath("/dashboard/admin/hackathons")
+    revalidatePath(`/dashboard/hackathons/${hackathonId}`)
+    
+    console.log("updateResultVisibilityAction: Success!")
+    console.log("========== updateResultVisibilityAction END (SUCCESS) ==========")
+    return { success: true }
+  } catch (error) {
+    console.log("updateResultVisibilityAction: ERROR:", error)
+    console.log("========== updateResultVisibilityAction END (ERROR) ==========")
+    return { error: "Failed to update result visibility" }
+  }
 }
