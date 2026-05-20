@@ -88,7 +88,7 @@ export async function signupAction(prevState: { error: string }, formData: FormD
   if (!validatedFields.success) {
     console.log("signupAction: Validation failed")
     console.log("========== signupAction END (VALIDATION ERROR) ==========")
-    const firstError = validatedFields.error.errors[0]
+    const firstError = validatedFields.error.issues[0]
     return { error: firstError.message }
   }
 
@@ -247,7 +247,7 @@ export async function verifyOtpAction(prevState: { success?: boolean; error?: st
   redirect(PROTECTED_ROUTES.DASHBOARD)
 }
 
-export async function resendOtpAction(prevState: { success?: boolean; error?: string }, formData: FormData): Promise<{ success?: boolean; error?: string }> {
+export async function resendOtpAction(prevState: { success?: boolean; error?: string; message?: string }, formData: FormData): Promise<{ success?: boolean; error?: string; message?: string }> {
   console.log("========== resendOtpAction START ==========")
   const supabase = await createClient()
 

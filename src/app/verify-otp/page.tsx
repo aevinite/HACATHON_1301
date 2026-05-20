@@ -19,7 +19,7 @@ export default function VerifyOtpPage() {
   const otpInputRef = useRef<HTMLInputElement>(null)
   
   const [verifyState, verifyFormAction, isVerifyPending] = useActionState(verifyOtpAction, { error: "", success: false })
-  const [resendState, resendFormAction, isResendPending] = useActionState(resendOtpAction, { error: "", success: false })
+  const [resendState, resendFormAction, isResendPending] = useActionState(resendOtpAction, { error: "", success: false, message: "" })
   const [otpValue, setOtpValue] = useState("")
   const [resendCooldown, setResendCooldown] = useState(0)
   const [showResendSuccess, setShowResendSuccess] = useState(false)
