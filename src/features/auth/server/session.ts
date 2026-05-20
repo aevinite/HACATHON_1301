@@ -4,6 +4,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase-server"
 import { AUTH_ROUTES, PROTECTED_ROUTES } from "../constants"
+import { ProfilesRepository } from "@/data/repositories/profiles-repository"
 
 export async function getCurrentUser() {
   const supabase = await createClient()
@@ -38,7 +39,19 @@ export async function requireAuth() {
 export async function requireGuest() {
   const user = await getCurrentUser()
   if (user) {
-    redirect(PROTECTED_ROUTES.DASHBOARD)
+    const profilesRepo = new ProfilesRepository()
+    const profile = await profilesRepo.findByUserId(user.id)
+    const role = profile?.role || "team"
+    
+    let redirectUrl: string = PROTECTED_ROUTES.DASHBOARD
+    if (role === "admin") {
+      redirectUrl = "/dashboard/admin/hackathons"
+    } else if (role === "team") {
+      redirectUrl = "/dashboard/hackathons"
+    } else if (role === "judge") {
+      redirectUrl = "/dashboard"
+    }
+    redirect(redirectUrl)
   }
 }
 
