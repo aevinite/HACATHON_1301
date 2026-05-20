@@ -25,8 +25,8 @@ const demoAccounts = [
   },
   {
     name: "Team",
-    email: "team@example.com",
-    password: "team@example.com",
+    email: "rishi.nakrani1317@gmail.com",
+    password: "Rishi@1317",
   },
 ]
 
