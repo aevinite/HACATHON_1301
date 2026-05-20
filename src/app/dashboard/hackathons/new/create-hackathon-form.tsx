@@ -1,9 +1,9 @@
 
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Upload, X, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -20,11 +20,52 @@ interface FormState {
 
 export default function CreateHackathonForm() {
   const [state, formAction, isPending] = useActionState<FormState, FormData>(createHackathonAction, {})
+  const [bannerFile, setBannerFile] = useState<File | null>(null)
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null)
+  const [problemFile, setProblemFile] = useState<File | null>(null)
   const formId = "create-hackathon-form"
+
+  const handleBannerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setBannerFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setBannerPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const clearBannerFile = () => {
+    setBannerFile(null)
+    setBannerPreview(null)
+  }
+
+  const handleProblemFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setProblemFile(file)
+    }
+  }
+
+  const clearProblemFile = () => {
+    setProblemFile(null)
+  }
+
+  const handleSubmit = (formData: FormData) => {
+    if (bannerFile) {
+      formData.append("banner_file", bannerFile)
+    }
+    if (problemFile) {
+      formData.append("problem_file", problemFile)
+    }
+    formAction(formData)
+  }
 
   return (
     <div className="p-6 md:p-8 lg:p-10 pb-10">
-      <form id={formId} action={formAction} className="max-w-4xl mx-auto space-y-6 pb-20">
+      <form id={formId} action={handleSubmit} className="max-w-4xl mx-auto space-y-6 pb-20">
         <div className="mb-8">
           <Link href="/dashboard/hackathons" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-4 w-4" />
@@ -238,12 +279,40 @@ export default function CreateHackathonForm() {
         {/* Media / Banner */}
         <Card>
           <CardHeader>
-            <CardTitle>Media &amp; Banner</CardTitle>
+            <CardTitle>Media & Banner</CardTitle>
             <CardDescription>Add a banner image for your hackathon</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="banner_image">Banner Image URL</Label>
+            {bannerPreview ? (
+              <div className="relative rounded-lg overflow-hidden border">
+                <img src={bannerPreview} alt="Banner preview" className="w-full h-48 object-cover" />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="absolute top-2 right-2"
+                  onClick={clearBannerFile}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+                <p className="text-sm text-muted-foreground mt-2 px-2 pb-2">
+                  {bannerFile?.name}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="banner_file">Upload Banner Image</Label>
+                <Input
+                  id="banner_file"
+                  name="banner_file"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleBannerFileChange}
+                />
+              </div>
+            )}
+            <div className="space-y-2 pt-2">
+              <Label htmlFor="banner_image">Or use Banner Image URL</Label>
               <Input id="banner_image" name="banner_image" placeholder="https://example.com/banner.jpg" defaultValue={state.values?.banner_image || ""} />
               <p className="text-xs text-muted-foreground">
                 Use a direct image URL ending in .jpg, .png, .webp, etc.
@@ -252,16 +321,38 @@ export default function CreateHackathonForm() {
           </CardContent>
         </Card>
 
-        {/* Problem Statement Note */}
+        {/* Problem Statement */}
         <Card className="mb-20">
           <CardHeader>
             <CardTitle>Problem Statement</CardTitle>
-            <CardDescription>Detailed challenge description</CardDescription>
+            <CardDescription>Upload the challenge problem statement PDF</CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              PDF upload will be added later using Supabase Storage.
-            </p>
+          <CardContent className="space-y-4">
+            {problemFile ? (
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-6 w-6 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">{problemFile.name}</p>
+                    <p className="text-xs text-muted-foreground">{(problemFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                  </div>
+                </div>
+                <Button type="button" variant="destructive" size="sm" onClick={clearProblemFile}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="problem_file">Upload Problem Statement PDF</Label>
+                <Input
+                  id="problem_file"
+                  name="problem_file"
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handleProblemFileChange}
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
       </form>
@@ -282,4 +373,3 @@ export default function CreateHackathonForm() {
     </div>
   )
 }
-

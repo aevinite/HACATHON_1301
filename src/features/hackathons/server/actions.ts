@@ -7,6 +7,10 @@ import { createClient } from "@/lib/supabase-server"
 import { HackathonsRepository } from "@/data/repositories/hackathons-repository"
 import { JudgesRepository } from "@/data/repositories/judges-repository"
 import { ProfilesRepository } from "@/data/repositories/profiles-repository"
+import { StorageService } from "@/storage/utils/storage-utils"
+import { FileValidator } from "@/storage/validators/file-validator"
+import { BUCKETS } from "@/storage/constants/buckets"
+import { PATH_GENERATORS, getFileExtension } from "@/storage/constants/paths"
 
 interface FormState {
   success?: boolean
@@ -44,9 +48,11 @@ export async function createHackathonAction(prevState: FormState, formData: Form
   const registrationStartDate = formData.get("registration_start_date") as string
   const registrationDeadline = formData.get("registration_deadline") as string
   const judgingDeadline = formData.get("judging_deadline") as string
-  const bannerImage = formData.get("banner_image") as string
+  let bannerImage = formData.get("banner_image") as string
+  const bannerFile = formData.get("banner_file") as File | null
+  const problemFile = formData.get("problem_file") as File | null
 
-  console.log("createHackathonAction: Form values:", { name, description, startDate, submissionDeadline, registrationStartDate, registrationDeadline, judgingDeadline, bannerImage })
+  console.log("createHackathonAction: Form values:", { name, description, startDate, submissionDeadline, registrationStartDate, registrationDeadline, judgingDeadline, bannerImage, bannerFile: bannerFile?.name })
   
   const fieldErrors: Record<string, string> = {}
   const values = getFormValues(formData)
@@ -114,11 +120,68 @@ export async function createHackathonAction(prevState: FormState, formData: Form
   try {
     createdHackathon = await repository.create(payload)
     console.log("createHackathonAction: Repository create result:", createdHackathon)
+    
+    if (bannerFile && bannerFile.size > 0) {
+      const validationResult = FileValidator.validate({
+        bucket: BUCKETS.PUBLIC.HACKATHON_BANNERS,
+        file: bannerFile
+      })
+      
+      if (!validationResult.valid) {
+        return { fieldErrors: {}, formError: validationResult.errors.join(", "), values }
+      }
+      
+      const timestamp = Date.now()
+      const path = PATH_GENERATORS.hackathonBanner(createdHackathon.id, timestamp)
+      const extension = getFileExtension(bannerFile.type)
+      const fullPath = `${path}${extension}`
+      
+      await StorageService.uploadFile(
+        BUCKETS.PUBLIC.HACKATHON_BANNERS,
+        fullPath,
+        bannerFile,
+        { contentType: bannerFile.type, upsert: true }
+      )
+      
+      const publicUrl = await StorageService.getPublicUrl(
+        BUCKETS.PUBLIC.HACKATHON_BANNERS,
+        fullPath
+      )
+      
+      await repository.update(createdHackathon.id, { banner_image: publicUrl })
+    }
+    
+    let problemStatementPath: string | null = null
+    if (problemFile && problemFile.size > 0) {
+      const validationResult = FileValidator.validate({
+        bucket: BUCKETS.PRIVATE.PROBLEM_STATEMENTS,
+        file: problemFile
+      })
+      
+      if (!validationResult.valid) {
+        return { fieldErrors: {}, formError: validationResult.errors.join(", "), values }
+      }
+      
+      const timestamp = Date.now()
+      const path = PATH_GENERATORS.problemStatement(createdHackathon.id, createdHackathon.id, timestamp)
+      const extension = getFileExtension(problemFile.type)
+      const fullPath = `${path}${extension}`
+      
+      await StorageService.uploadFile(
+        BUCKETS.PRIVATE.PROBLEM_STATEMENTS,
+        fullPath,
+        problemFile,
+        { contentType: problemFile.type, upsert: true }
+      )
+      
+      problemStatementPath = fullPath
+      await repository.update(createdHackathon.id, { problem_statement: problemStatementPath })
+    }
   } catch (error) {
     console.log("createHackathonAction: ERROR:", error)
     console.log("createHackathonAction: Error details:", JSON.stringify(error, null, 2))
     console.log("========== createHackathonAction END (ERROR) ==========")
-    const userError = "Hackathon could not be saved because the database schema is missing a field. Please contact admin/developer."
+    const userError = "Hackathon could not be saved. Please contact admin/developer."
     const devError = error instanceof Error ? `\nDeveloper: ${error.message}` : ""
     return { formError: userError + devError, values }
   }
@@ -155,13 +218,15 @@ export async function updateHackathonAction(prevState: FormState, formData: Form
   const judgingDeadline = formData.get("judging_deadline") as string
   const minTeamSize = formData.get("min_team_size") as string
   const maxTeamSize = formData.get("max_team_size") as string
-  const bannerImage = formData.get("banner_image") as string
+  let bannerImage = formData.get("banner_image") as string
+  const bannerFile = formData.get("banner_file") as File | null
+  const problemFile = formData.get("problem_file") as File | null
   const selectedJudgesJson = formData.get("selectedJudges") as string
 
   const returnTo = formData.get("returnTo") as string
   const returnLabel = formData.get("returnLabel") as string
 
-  console.log("updateHackathonAction: Form values:", { id, name, description, status, startDate, submissionDeadline, registrationDeadline, judgingDeadline, minTeamSize, maxTeamSize, bannerImage, returnTo, selectedJudgesJson })
+  console.log("updateHackathonAction: Form values:", { id, name, description, status, startDate, submissionDeadline, registrationDeadline, judgingDeadline, minTeamSize, maxTeamSize, bannerImage, bannerFile: bannerFile?.name, returnTo, selectedJudgesJson })
   
   const fieldErrors: Record<string, string> = {}
   const values = getFormValues(formData)
@@ -206,25 +271,90 @@ export async function updateHackathonAction(prevState: FormState, formData: Form
   const repository = new HackathonsRepository()
   const judgesRepo = new JudgesRepository()
   const profilesRepo = new ProfilesRepository()
-  const payload = {
-    name,
-    description,
-    theme: null,
-    problem_statement: null,
-    status: status as "draft" | "registration" | "submission" | "judging" | "completed",
-    start_date: startDate ? new Date(startDate).toISOString() : null,
-    submission_deadline: submissionDeadline ? new Date(submissionDeadline).toISOString() : null,
-    registration_start_date: registrationStartDate ? new Date(registrationStartDate).toISOString() : null,
-    registration_deadline: registrationDeadline ? new Date(registrationDeadline).toISOString() : null,
-    judging_deadline: judgingDeadline ? new Date(judgingDeadline).toISOString() : null,
-    min_team_size: minTeamSize ? parseInt(minTeamSize) : 1,
-    max_team_size: maxTeamSize ? parseInt(maxTeamSize) : 4,
-    banner_image: bannerImage || null,
-  }
   
-  console.log("updateHackathonAction: Update payload:", payload)
-  
+  let finalBannerImage = bannerImage || null
+  let finalProblemStatement: string | null = null
+
   try {
+    const existingHackathon = await repository.findById(id)
+    
+    if (bannerFile && bannerFile.size > 0) {
+      const validationResult = FileValidator.validate({
+        bucket: BUCKETS.PUBLIC.HACKATHON_BANNERS,
+        file: bannerFile
+      })
+      
+      if (!validationResult.valid) {
+        return { fieldErrors: {}, formError: validationResult.errors.join(", "), values }
+      }
+      
+      const timestamp = Date.now()
+      const path = PATH_GENERATORS.hackathonBanner(id, timestamp)
+      const extension = getFileExtension(bannerFile.type)
+      const fullPath = `${path}${extension}`
+      
+      await StorageService.uploadFile(
+        BUCKETS.PUBLIC.HACKATHON_BANNERS,
+        fullPath,
+        bannerFile,
+        { contentType: bannerFile.type, upsert: true }
+      )
+      
+      finalBannerImage = await StorageService.getPublicUrl(
+        BUCKETS.PUBLIC.HACKATHON_BANNERS,
+        fullPath
+      )
+    } else if (bannerImage) {
+      finalBannerImage = bannerImage || null
+    } else if (existingHackathon) {
+      finalBannerImage = existingHackathon.banner_image
+    }
+
+    if (problemFile && problemFile.size > 0) {
+      const validationResult = FileValidator.validate({
+        bucket: BUCKETS.PRIVATE.PROBLEM_STATEMENTS,
+        file: problemFile
+      })
+      
+      if (!validationResult.valid) {
+        return { fieldErrors: {}, formError: validationResult.errors.join(", "), values }
+      }
+      
+      const timestamp = Date.now()
+      const path = PATH_GENERATORS.problemStatement(id, id, timestamp)
+      const extension = getFileExtension(problemFile.type)
+      const fullPath = `${path}${extension}`
+      
+      await StorageService.uploadFile(
+        BUCKETS.PRIVATE.PROBLEM_STATEMENTS,
+        fullPath,
+        problemFile,
+        { contentType: problemFile.type, upsert: true }
+      )
+      
+      finalProblemStatement = fullPath
+    } else if (existingHackathon) {
+      finalProblemStatement = existingHackathon.problem_statement
+    }
+
+    const payload = {
+      name,
+      description,
+      theme: null,
+      problem_statement: finalProblemStatement,
+      status: status as "draft" | "registration" | "submission" | "judging" | "completed",
+      start_date: startDate ? new Date(startDate).toISOString() : null,
+      submission_deadline: submissionDeadline ? new Date(submissionDeadline).toISOString() : null,
+      registration_start_date: registrationStartDate ? new Date(registrationStartDate).toISOString() : null,
+      registration_deadline: registrationDeadline ? new Date(registrationDeadline).toISOString() : null,
+      judging_deadline: judgingDeadline ? new Date(judgingDeadline).toISOString() : null,
+      min_team_size: minTeamSize ? parseInt(minTeamSize) : 1,
+      max_team_size: maxTeamSize ? parseInt(maxTeamSize) : 4,
+      banner_image: finalBannerImage,
+    }
+    
+    console.log("updateHackathonAction: Update payload:", payload)
+    
     const result = await repository.update(id, payload)
     console.log("updateHackathonAction: Repository update result:", result)
 
@@ -267,7 +397,7 @@ export async function updateHackathonAction(prevState: FormState, formData: Form
     console.log("updateHackathonAction: ERROR:", error)
     console.log("updateHackathonAction: Error details:", JSON.stringify(error, null, 2))
     console.log("========== updateHackathonAction END (ERROR) ==========")
-    const userError = "Hackathon could not be saved because the database schema is missing a field. Please contact admin/developer."
+    const userError = "Hackathon could not be saved. Please contact admin/developer."
     const devError = error instanceof Error ? `\nDeveloper: ${error.message}` : ""
     return { formError: userError + devError, values }
   }
@@ -644,4 +774,60 @@ export async function updateResultVisibilityAction(prevState: { error?: string; 
     console.log("========== updateResultVisibilityAction END (ERROR) ==========")
     return { error: "Failed to update result visibility" }
   }
+}
+
+export async function getProblemStatementSignedUrlAction(
+  hackathonId: string
+): Promise<{ success: true; url: string } | { success: false; error: string }> {
+  console.log("========== getProblemStatementSignedUrlAction START ==========")
+  
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  const repository = new HackathonsRepository()
+  const hackathon = await repository.findById(hackathonId)
+  
+  if (!hackathon) {
+    console.log("getProblemStatementSignedUrlAction: Hackathon not found")
+    console.log("========== getProblemStatementSignedUrlAction END (NOT FOUND) ==========")
+    return { success: false, error: "Hackathon not found" }
+  }
+  
+  if (!hackathon.problem_statement) {
+    console.log("getProblemStatementSignedUrlAction: No problem statement")
+    console.log("========== getProblemStatementSignedUrlAction END (NO STATEMENT) ==========")
+    return { success: false, error: "No problem statement available" }
+  }
+  
+  const currentTime = new Date()
+  const hackathonStartTime = hackathon.start_date ? new Date(hackathon.start_date) : null
+  
+  const isAdmin = user ? (await (async () => {
+    const profilesRepo = new ProfilesRepository()
+    const profile = await profilesRepo.findByUserId(user.id)
+    return profile?.role === "admin"
+  })()) : false
+  
+  const isJudge = user ? (await (async () => {
+    const judgesRepo = new JudgesRepository()
+    const assignments = await judgesRepo.findByHackathonId(hackathonId)
+    return assignments.some(a => a.user_id === user.id && a.status === "active")
+  })()) : false
+  
+  if (!isAdmin && !isJudge && (!hackathonStartTime || currentTime < hackathonStartTime)) {
+    console.log("getProblemStatementSignedUrlAction: Not allowed yet")
+    console.log("========== getProblemStatementSignedUrlAction END (LOCKED) ==========")
+    return { success: false, error: "Problem statement will be available when the hackathon starts." }
+  }
+  
+  const signedUrl = await StorageService.getSignedUrl(
+    BUCKETS.PRIVATE.PROBLEM_STATEMENTS,
+    hackathon.problem_statement,
+    3600 // 1 hour
+  )
+  
+  console.log("getProblemStatementSignedUrlAction: Success! Returning signed URL")
+  console.log("========== getProblemStatementSignedUrlAction END (SUCCESS) ==========")
+  
+  return { success: true, url: signedUrl }
 }

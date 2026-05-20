@@ -3,7 +3,7 @@
 
 import { useActionState, useState, useEffect } from "react"
 import Link from "next/link"
-import { ArrowLeft, Trash2 } from "lucide-react"
+import { ArrowLeft, Trash2, X, Image as ImageIcon, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -26,6 +26,7 @@ interface Hackathon {
   min_team_size: number
   max_team_size: number
   banner_image: string | null
+  problem_statement: string | null
 }
 
 interface RubricCriterion {
@@ -163,6 +164,9 @@ export default function EditHackathonForm({
 }: EditHackathonFormProps) {
   const [state, formAction, isPending] = useActionState<FormState, FormData>(updateHackathonAction, {})
   const [selectedJudges, setSelectedJudges] = useState<string[]>(hackathonJudges.map(j => j.user_id))
+  const [bannerFile, setBannerFile] = useState<File | null>(null)
+  const [bannerPreview, setBannerPreview] = useState<string | null>(hackathon.banner_image)
+  const [problemFile, setProblemFile] = useState<File | null>(null)
   const formId = "edit-hackathon-form"
 
   useEffect(() => {
@@ -220,8 +224,42 @@ export default function EditHackathonForm({
     }
   }
 
+  const handleBannerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setBannerFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setBannerPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const clearBannerFile = () => {
+    setBannerFile(null)
+    setBannerPreview(hackathon.banner_image)
+  }
+
+  const handleProblemFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setProblemFile(file)
+    }
+  }
+
+  const clearProblemFile = () => {
+    setProblemFile(null)
+  }
+
   const handleFormSubmit = (formData: FormData) => {
     formData.set("selectedJudges", JSON.stringify(selectedJudges))
+    if (bannerFile) {
+      formData.append("banner_file", bannerFile)
+    }
+    if (problemFile) {
+      formData.append("problem_file", problemFile)
+    }
   }
 
   return (
@@ -308,17 +346,50 @@ export default function EditHackathonForm({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="banner_image">Banner Image URL (optional)</Label>
-              <Input
-                id="banner_image"
-                name="banner_image"
-                placeholder="https://example.com/banner.jpg"
-                defaultValue={getStringValue("banner_image")}
-              />
-              <p className="text-xs text-muted-foreground">
-                Use a direct image URL ending in .jpg, .png, .webp, etc.
-              </p>
+            <div className="space-y-4">
+              {bannerPreview ? (
+                <div className="relative rounded-lg overflow-hidden border">
+                  <img src={bannerPreview} alt="Current banner" className="w-full h-48 object-cover" />
+                  {bannerFile && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={clearBannerFile}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {bannerFile && (
+                    <p className="text-sm text-muted-foreground mt-2 px-2 pb-2">
+                      {bannerFile?.name} (new)
+                    </p>
+                  )}
+                </div>
+              ) : null}
+              <div className="space-y-2">
+                <Label htmlFor="banner_file">{bannerPreview ? "Replace Banner Image" : "Upload Banner Image"}</Label>
+                <Input
+                  id="banner_file"
+                  name="banner_file"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleBannerFileChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="banner_image">Or use Banner Image URL (optional)</Label>
+                <Input
+                  id="banner_image"
+                  name="banner_image"
+                  placeholder="https://example.com/banner.jpg"
+                  defaultValue={getStringValue("banner_image")}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Use a direct image URL ending in .jpg, .png, .webp, etc.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -516,16 +587,47 @@ export default function EditHackathonForm({
           </CardContent>
         </Card>
 
-        {/* Problem Statement Note */}
+        {/* Problem Statement */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Problem Statement</CardTitle>
-            <CardDescription>Detailed challenge description</CardDescription>
+            <CardDescription>Upload or replace the challenge problem statement PDF</CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              PDF upload will be added later using Supabase Storage.
-            </p>
+          <CardContent className="space-y-4">
+            {problemFile ? (
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-6 w-6 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">{problemFile.name}</p>
+                    <p className="text-xs text-muted-foreground">{(problemFile.size / 1024 / 1024).toFixed(2)} MB (new)</p>
+                  </div>
+                </div>
+                <Button type="button" variant="destructive" size="sm" onClick={clearProblemFile}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : hackathon.problem_statement ? (
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-6 w-6 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Current Problem Statement</p>
+                    <p className="text-xs text-muted-foreground">Uploaded</p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+            <div className="space-y-2">
+              <Label htmlFor="problem_file">{problemFile || hackathon.problem_statement ? "Replace Problem Statement PDF" : "Upload Problem Statement PDF"}</Label>
+              <Input
+                id="problem_file"
+                name="problem_file"
+                type="file"
+                accept="application/pdf"
+                onChange={handleProblemFileChange}
+              />
+            </div>
           </CardContent>
         </Card>
 
