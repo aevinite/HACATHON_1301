@@ -28,6 +28,15 @@ function getFormValues(formData: FormData): Record<string, string | null> {
   return values
 }
 
+function parseDatetimeLocalAsUTC(datetimeLocal: string): string {
+  // Parse "YYYY-MM-DDTHH:mm" as UTC time instead of local time
+  const [datePart, timePart] = datetimeLocal.split('T')
+  const [year, month, day] = datePart.split('-').map(Number)
+  const [hour, minute] = timePart.split(':').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day, hour, minute))
+  return date.toISOString()
+}
+
 export async function createHackathonAction(prevState: FormState, formData: FormData): Promise<FormState> {
   console.log("========== createHackathonAction START ==========")
   
@@ -70,11 +79,11 @@ export async function createHackathonAction(prevState: FormState, formData: Form
   }
 
   const dates = {
-    registrationStart: registrationStartDate ? new Date(registrationStartDate) : null,
-    registrationEnd: registrationDeadline ? new Date(registrationDeadline) : null,
-    hackathonStart: startDate ? new Date(startDate) : null,
-    submissionEnd: submissionDeadline ? new Date(submissionDeadline) : null,
-    judgingEnd: judgingDeadline ? new Date(judgingDeadline) : null,
+    registrationStart: registrationStartDate ? new Date(parseDatetimeLocalAsUTC(registrationStartDate)) : null,
+    registrationEnd: registrationDeadline ? new Date(parseDatetimeLocalAsUTC(registrationDeadline)) : null,
+    hackathonStart: startDate ? new Date(parseDatetimeLocalAsUTC(startDate)) : null,
+    submissionEnd: submissionDeadline ? new Date(parseDatetimeLocalAsUTC(submissionDeadline)) : null,
+    judgingEnd: judgingDeadline ? new Date(parseDatetimeLocalAsUTC(judgingDeadline)) : null,
   }
 
   if (dates.registrationStart && dates.registrationEnd && dates.registrationStart >= dates.registrationEnd) {
@@ -110,11 +119,11 @@ export async function createHackathonAction(prevState: FormState, formData: Form
     min_team_size: minTeamSize ? parseInt(minTeamSize) : 1,
     max_team_size: maxTeamSize ? parseInt(maxTeamSize) : 4,
     created_by: user.id,
-    start_date: startDate ? new Date(startDate).toISOString() : null,
-    submission_deadline: submissionDeadline ? new Date(submissionDeadline).toISOString() : null,
-    registration_start_date: registrationStartDate ? new Date(registrationStartDate).toISOString() : null,
-    registration_deadline: registrationDeadline ? new Date(registrationDeadline).toISOString() : null,
-    judging_deadline: judgingDeadline ? new Date(judgingDeadline).toISOString() : null,
+    start_date: startDate ? parseDatetimeLocalAsUTC(startDate) : null,
+    submission_deadline: submissionDeadline ? parseDatetimeLocalAsUTC(submissionDeadline) : null,
+    registration_start_date: registrationStartDate ? parseDatetimeLocalAsUTC(registrationStartDate) : null,
+    registration_deadline: registrationDeadline ? parseDatetimeLocalAsUTC(registrationDeadline) : null,
+    judging_deadline: judgingDeadline ? parseDatetimeLocalAsUTC(judgingDeadline) : null,
     banner_image: bannerImage || null,
     results_published: false,
     results_visible_to_judges: false,
@@ -294,11 +303,11 @@ export async function updateHackathonAction(prevState: FormState, formData: Form
   }
 
   const dates = {
-    registrationStart: registrationStartDate ? new Date(registrationStartDate) : null,
-    registrationEnd: registrationDeadline ? new Date(registrationDeadline) : null,
-    hackathonStart: startDate ? new Date(startDate) : null,
-    submissionEnd: submissionDeadline ? new Date(submissionDeadline) : null,
-    judgingEnd: judgingDeadline ? new Date(judgingDeadline) : null,
+    registrationStart: registrationStartDate ? new Date(parseDatetimeLocalAsUTC(registrationStartDate)) : null,
+    registrationEnd: registrationDeadline ? new Date(parseDatetimeLocalAsUTC(registrationDeadline)) : null,
+    hackathonStart: startDate ? new Date(parseDatetimeLocalAsUTC(startDate)) : null,
+    submissionEnd: submissionDeadline ? new Date(parseDatetimeLocalAsUTC(submissionDeadline)) : null,
+    judgingEnd: judgingDeadline ? new Date(parseDatetimeLocalAsUTC(judgingDeadline)) : null,
   }
 
   if (dates.registrationStart && dates.registrationEnd && dates.registrationStart >= dates.registrationEnd) {
