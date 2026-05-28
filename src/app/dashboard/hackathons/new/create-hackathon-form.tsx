@@ -18,6 +18,14 @@ interface FormState {
   values?: Record<string, string | null>
 }
 
+function formatLocalDateTime(dateString: string | null): string {
+  if (!dateString) return ""
+  const date = new Date(dateString)
+  const offset = date.getTimezoneOffset()
+  const localDate = new Date(date.getTime() - (offset * 60 * 1000))
+  return localDate.toISOString().slice(0, 16)
+}
+
 export default function CreateHackathonForm() {
   const [state, formAction, isPending] = useActionState<FormState, FormData>(createHackathonAction, {})
   const [bannerFile, setBannerFile] = useState<File | null>(null)
@@ -346,6 +354,39 @@ export default function CreateHackathonForm() {
                 />
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Team Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Team Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="min_team_size">Min Team Size</Label>
+              <Input
+                id="min_team_size"
+                name="min_team_size"
+                type="number"
+                min="1"
+                max="10"
+                defaultValue={state.values?.min_team_size || "1"}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="max_team_size">Max Team Size</Label>
+              <Input
+                id="max_team_size"
+                name="max_team_size"
+                type="number"
+                min="1"
+                max="10"
+                defaultValue={state.values?.max_team_size || "4"}
+                required
+              />
+            </div>
           </CardContent>
         </Card>
 

@@ -48,6 +48,8 @@ export async function createHackathonAction(prevState: FormState, formData: Form
   const registrationStartDate = formData.get("registration_start_date") as string
   const registrationDeadline = formData.get("registration_deadline") as string
   const judgingDeadline = formData.get("judging_deadline") as string
+  const minTeamSize = formData.get("min_team_size") as string
+  const maxTeamSize = formData.get("max_team_size") as string
   let bannerImage = formData.get("banner_image") as string
   const bannerFile = formData.get("banner_file") as File | null
   const problemFile = formData.get("problem_file") as File | null
@@ -99,8 +101,8 @@ export async function createHackathonAction(prevState: FormState, formData: Form
     problem_statement: null,
     status: "draft" as const,
     is_public: true,
-    min_team_size: 1,
-    max_team_size: 4,
+    min_team_size: minTeamSize ? parseInt(minTeamSize) : 1,
+    max_team_size: maxTeamSize ? parseInt(maxTeamSize) : 4,
     created_by: user.id,
     start_date: startDate ? new Date(startDate).toISOString() : null,
     submission_deadline: submissionDeadline ? new Date(submissionDeadline).toISOString() : null,
