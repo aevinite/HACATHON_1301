@@ -554,6 +554,12 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
                     id="criterionName"
                     value={newCriterionName}
                     onChange={(e) => setNewCriterionName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault()
+                        addDraftRubricCriterion(e)
+                      }
+                    }}
                     placeholder="e.g., Innovation"
                     required
                   />
@@ -564,6 +570,11 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
                     id="criterionDescription"
                     value={newCriterionDescription}
                     onChange={(e) => setNewCriterionDescription(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault()
+                      }
+                    }}
                     placeholder="Describe how to judge this criterion"
                     rows={2}
                   />
@@ -578,6 +589,12 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
                       max="100"
                       value={newCriterionMaxScore}
                       onChange={(e) => setNewCriterionMaxScore(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault()
+                          addDraftRubricCriterion(e)
+                        }
+                      }}
                       required
                     />
                   </div>
