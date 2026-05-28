@@ -163,10 +163,6 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
       setClientError("Problem statement PDF is required")
       return
     }
-    if (rubricCriteria.length === 0) {
-      setClientError("At least one rubric criterion is required")
-      return
-    }
     if (selectedJudges.length === 0) {
       setClientError("At least one judge must be selected")
       return
@@ -546,7 +542,7 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
           <CardContent className="space-y-4">
             {/* Add New Criterion (NO FORM - use state and button) */}
             <div className="p-4 border border-dashed rounded-lg space-y-3">
-              <h4 className="font-medium text-sm">Add New Criterion <span className="text-red-500">*</span></h4>
+              <h4 className="font-medium text-sm">Add New Criterion</h4>
               <div className="space-y-3">
                 <div className="space-y-2">
                   <Label htmlFor="criterionName">Criterion Name</Label>
@@ -561,7 +557,6 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
                       }
                     }}
                     placeholder="e.g., Innovation"
-                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -595,7 +590,6 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
                           addDraftRubricCriterion(e)
                         }
                       }}
-                      required
                     />
                   </div>
                   <div className="flex items-end">

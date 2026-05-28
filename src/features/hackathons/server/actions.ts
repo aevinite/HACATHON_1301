@@ -126,16 +126,6 @@ export async function createHackathonAction(prevState: FormState, formData: Form
   if (!problemFile || problemFile.size === 0) {
     formError = "Problem statement PDF is required"
   }
-  
-  try {
-    const rubricCriteria = JSON.parse(rubricCriteriaJson)
-    if (!Array.isArray(rubricCriteria) || rubricCriteria.length === 0) {
-      formError = "At least one rubric criterion is required"
-    }
-  } catch {
-    formError = "At least one rubric criterion is required"
-  }
-  
   try {
     const selectedJudges = JSON.parse(selectedJudgesJson)
     if (!Array.isArray(selectedJudges) || selectedJudges.length === 0) {
