@@ -3,13 +3,13 @@
 
 import { useState, useMemo, useActionState, useRef } from "react"
 import Link from "next/link"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
-import { Trophy, Plus, Trash2, AlertTriangle, Edit, Eye } from "lucide-react"
+import { Trophy, Plus, Trash2, AlertTriangle, Edit, Eye, Users, FileText } from "lucide-react"
 import { deleteHackathonAction } from "@/features/hackathons/server/actions"
 import { updateResultVisibilityAction } from "@/features/hackathons/server/actions"
 import { AdminPageHeader } from "@/components/admin/admin-page-header"
@@ -132,10 +132,10 @@ function DeleteHackathonButton({ hackathonId, hackathonName }: { hackathonId: st
   }
 
   return (
-    <div className="flex flex-col items-start gap-2">
+    <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button variant="destructive" size="sm">
+          <Button variant="destructive" size="sm" className="w-full">
             <Trash2 className="h-4 w-4 mr-2" />
             Delete
           </Button>
@@ -176,7 +176,7 @@ function DeleteHackathonButton({ hackathonId, hackathonName }: { hackathonId: st
       <form ref={formRef} action={formAction} className="hidden">
         <input type="hidden" name="id" value={hackathonId} />
       </form>
-    </div>
+    </>
   )
 }
 
@@ -192,8 +192,8 @@ function ResultVisibilityControls({ hackathon }: { hackathon: Hackathon }) {
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <Badge variant="default" className={getResultStatusBadgeClass(getResultStatusLabel(hackathon))}>
+    <div className="flex flex-col gap-2">
+      <Badge variant="default" className={getResultStatusBadgeClass(getResultStatusLabel(hackathon)) + " w-fit"}>
         {getResultStatusLabel(hackathon)}
       </Badge>
       <form ref={formRef} action={formAction} className="flex items-center gap-2">
@@ -203,7 +203,7 @@ function ResultVisibilityControls({ hackathon }: { hackathon: Hackathon }) {
           onValueChange={setSelectedVisibility}
           name="visibility"
         >
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="flex-1">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -268,66 +268,71 @@ export default function AdminHackathonsClient({ initialHackathons }: AdminHackat
   [filteredHackathons])
 
   const renderHackathonCards = (hackathons: Hackathon[]) => (
-    <div className="grid gap-4">
+    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
       {hackathons.map((hackathon) => (
-        <div key={hackathon.id} className="glass rounded-2xl p-6 border border-white/10 hover:border-blue-500/40 transition-all hover:shadow-xl hover:shadow-blue-500/10">
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h3 className="text-xl font-bold text-white">{hackathon.name}</h3>
-                <div className="flex items-center gap-2">
-                  <Badge variant="default" className={getHackathonStatusBadgeClass(getHackathonLifecycleStatus(hackathon as any))}>
-                    {getHackathonStatusLabel(getHackathonLifecycleStatus(hackathon as any))}
+        <Card key={hackathon.id} className="overflow-hidden transition-all duration-200 hover:shadow-md hover:border-primary/20 group flex flex-col h-full glass border border-white/10">
+          <div className="w-full aspect-[16/9] bg-muted flex items-center justify-center group-hover:scale-105 transition-transform duration-500 overflow-hidden rounded-t-lg">
+            {(hackathon as any).banner_image ? (
+              <img
+                src={(hackathon as any).banner_image}
+                alt={hackathon.name}
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center">
+                <Trophy className="h-12 w-12 text-slate-600/50" />
+              </div>
+            )}
+          </div>
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1.5 flex-1 min-w-0">
+                <CardTitle className="line-clamp-1 text-lg leading-tight text-white">{hackathon.name}</CardTitle>
+                <CardDescription className="line-clamp-2 leading-relaxed text-slate-400">
+                  {hackathon.description}
+                </CardDescription>
+              </div>
+              <div className="flex flex-col gap-1 items-end">
+                <Badge className={getHackathonStatusBadgeClass(getHackathonLifecycleStatus(hackathon as any))} variant="secondary">
+                  {getHackathonStatusLabel(getHackathonLifecycleStatus(hackathon as any))}
+                </Badge>
+                {hackathon.is_public && (
+                  <Badge variant="default" className="bg-blue-500/10 text-blue-400 border-blue-500/20">
+                    Public
                   </Badge>
-                  {hackathon.is_public && (
-                    <Badge variant="default" className="bg-blue-500/10 text-blue-400 border-blue-500/20">
-                      Public
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              <p className="text-sm text-slate-400 line-clamp-2 mb-4">
-                {hackathon.description}
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="rounded-xl p-3 bg-white/5 border border-white/5">
-                  <p className="text-xs text-slate-500 mb-1">Teams</p>
-                  <p className="text-xl font-bold text-white">{hackathon.team_count}</p>
-                </div>
-                <div className="rounded-xl p-3 bg-white/5 border border-white/5">
-                  <p className="text-xs text-slate-500 mb-1">Projects</p>
-                  <p className="text-xl font-bold text-white">{hackathon.project_count}</p>
-                </div>
-                <div className="rounded-xl p-3 bg-white/5 border border-white/5">
-                  <p className="text-xs text-slate-500 mb-1">Start</p>
-                  <p className="text-sm font-medium text-slate-300">{formatDate(hackathon.start_date)}</p>
-                </div>
-                <div className="rounded-xl p-3 bg-white/5 border border-white/5">
-                  <p className="text-xs text-slate-500 mb-1">Deadline</p>
-                  <p className="text-sm font-medium text-slate-300">{formatDate(hackathon.submission_deadline)}</p>
-                </div>
+                )}
               </div>
             </div>
-          </div>
-          <div className="pt-4 mt-4 border-t border-white/10 flex flex-wrap gap-2 justify-between items-center">
+          </CardHeader>
+          <CardContent className="pt-0 pb-3">
+            <div className="flex items-center gap-4 text-sm text-slate-400 mb-3">
+              <div className="flex items-center gap-1.5">
+                <Users className="h-4 w-4" />
+                <span>{hackathon.team_count} teams</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <FileText className="h-4 w-4" />
+                <span>{hackathon.project_count} projects</span>
+              </div>
+            </div>
             <ResultVisibilityControls hackathon={hackathon} />
-            <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" size="sm" asChild className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
-                <Link href={`/dashboard/hackathons/${hackathon.id}?returnTo=/dashboard/admin/hackathons&returnLabel=Back%20to%20Manage%20Hackathons`}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Details
-                </Link>
-              </Button>
-              <Button variant="secondary" size="sm" asChild className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
-                <Link href={`/dashboard/admin/hackathons/${hackathon.id}/edit?returnTo=/dashboard/admin/hackathons&returnLabel=Back%20to%20Manage%20Hackathons`}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Link>
-              </Button>
-              <DeleteHackathonButton hackathonId={hackathon.id} hackathonName={hackathon.name} />
-            </div>
-          </div>
-        </div>
+          </CardContent>
+          <CardFooter className="pt-0 flex flex-col gap-2 mt-auto">
+            <Button asChild variant="secondary" size="sm" className="w-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
+              <Link href={`/dashboard/hackathons/${hackathon.id}?returnTo=/dashboard/admin/hackathons&returnLabel=Back%20to%20Manage%20Hackathons`}>
+                <Eye className="h-4 w-4 mr-2" />
+                View Details
+              </Link>
+            </Button>
+            <Button asChild variant="default" size="sm" className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-cyan-500 text-white">
+              <Link href={`/dashboard/admin/hackathons/${hackathon.id}/edit?returnTo=/dashboard/admin/hackathons&returnLabel=Back%20to%20Manage%20Hackathons`}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Link>
+            </Button>
+            <DeleteHackathonButton hackathonId={hackathon.id} hackathonName={hackathon.name} />
+          </CardFooter>
+        </Card>
       ))}
     </div>
   )
