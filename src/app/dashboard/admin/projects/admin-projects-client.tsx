@@ -148,19 +148,19 @@ export default function AdminProjectsClient({ initialProjects, initialHackathonI
 
       {/* Summary Boxes */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="glass rounded-2xl p-6 border border-white/5">
+        <div className="rounded-2xl p-6 bg-gradient-to-br from-blue-600/20 to-blue-500/5 border border-blue-500/20">
           <p className="text-sm text-slate-400 mb-1">Total Projects</p>
           <p className="text-2xl font-bold text-white">{summary.totalProjects}</p>
         </div>
-        <div className="glass rounded-2xl p-6 border border-white/5">
+        <div className="rounded-2xl p-6 bg-gradient-to-br from-blue-600/20 to-blue-500/5 border border-blue-500/20">
           <p className="text-sm text-slate-400 mb-1">Submitted Projects</p>
           <p className="text-2xl font-bold text-white">{summary.submittedProjects}</p>
         </div>
-        <div className="glass rounded-2xl p-6 border border-white/5">
+        <div className="rounded-2xl p-6 bg-gradient-to-br from-blue-600/20 to-blue-500/5 border border-blue-500/20">
           <p className="text-sm text-slate-400 mb-1">Scored Projects</p>
           <p className="text-2xl font-bold text-white">{summary.scoredProjects}</p>
         </div>
-        <div className="glass rounded-2xl p-6 border border-white/5">
+        <div className="rounded-2xl p-6 bg-gradient-to-br from-blue-600/20 to-blue-500/5 border border-blue-500/20">
           <p className="text-sm text-slate-400 mb-1">Teams With Projects</p>
           <p className="text-2xl font-bold text-white">{summary.teamsWithProjects}</p>
         </div>
