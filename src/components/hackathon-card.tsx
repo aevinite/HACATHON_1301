@@ -45,7 +45,7 @@ export function HackathonCard({ hackathon, showCurrentIndicator = true, returnTo
   })()
 
   return (
-    <Card className={`overflow-hidden transition-all duration-200 hover:shadow-md hover:border-primary/20 group ${isCurrentlyActive ? 'border-2 border-blue-500/50' : ''} flex flex-col h-full`}>
+    <Card className={`overflow-hidden transition-all duration-200 hover:shadow-md hover:border-primary/20 group ${isCurrentlyActive ? 'border-2 border-blue-500/50' : ''} flex flex-col h-full w-full`}>
       <div className="h-6">
         {isCurrentlyActive && showCurrentIndicator && (
           <div className="bg-blue-500 text-white text-xs font-bold px-3 py-1 text-center uppercase tracking-wider h-full flex items-center justify-center">
@@ -94,7 +94,7 @@ export function HackathonCard({ hackathon, showCurrentIndicator = true, returnTo
         </div>
       </CardContent>
       <CardFooter className="pt-0 flex flex-col sm:flex-row gap-2 mt-auto w-full">
-        <Button asChild variant="secondary" size="sm" className="flex-1 w-full">
+        <Button asChild variant="secondary" size="sm" className="flex-1 w-full overflow-hidden">
           <Link href={`/dashboard/hackathons/${hackathon.id}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}&returnLabel=${encodeURIComponent(returnLabel || "Back to Hackathons")}` : ""}`} className="w-full text-center">
             View Details
           </Link>

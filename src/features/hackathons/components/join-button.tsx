@@ -52,16 +52,16 @@ export function JoinHackathonButton({ hackathonId, isParticipating, hackathon, t
 
   if (isParticipating) {
     return (
-      <div className="flex-1">
+      <div className="flex-1 w-full">
         {team ? (
-          <Button asChild variant="secondary" size="sm" className="w-full">
-            <Link href={`/dashboard/teams/${team.id}?returnTo=/dashboard/hackathons/${hackathonId}&returnLabel=Back%20to%20Hackathon`}>
+          <Button asChild variant="secondary" size="sm" className="w-full overflow-hidden">
+            <Link href={`/dashboard/teams/${team.id}?returnTo=/dashboard/hackathons/${hackathonId}&returnLabel=Back%20to%20Hackathon`} className="w-full">
               <Users className="mr-2 h-4 w-4" />
               Participating
             </Link>
           </Button>
         ) : (
-          <Button disabled variant="secondary" size="sm" className="w-full">
+          <Button disabled variant="secondary" size="sm" className="w-full overflow-hidden">
             <Users className="mr-2 h-4 w-4" />
             Participating
           </Button>
@@ -71,14 +71,14 @@ export function JoinHackathonButton({ hackathonId, isParticipating, hackathon, t
   }
 
   return (
-    <div className="flex-1">
+    <div className="flex-1 w-full">
       <form action={formAction} className="w-full">
         <input type="hidden" name="hackathon_id" value={hackathonId} />
         <Button 
           disabled={!registrationOpen || isPending} 
           variant="default"
           size="sm"
-          className="w-full whitespace-nowrap text-sm"
+          className="w-full overflow-hidden text-sm"
         >
           {isPending ? "Joining..." : getButtonText()}
         </Button>
