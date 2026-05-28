@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase-server"
 import { HackathonsRepository } from "@/data/repositories/hackathons-repository"
+import { RubricCriteriaRepository } from "@/data/repositories/rubric-criteria-repository"
 import { JudgesRepository } from "@/data/repositories/judges-repository"
 import { ProfilesRepository } from "@/data/repositories/profiles-repository"
 import { StorageService } from "@/storage/utils/storage-utils"
@@ -50,6 +51,7 @@ export async function createHackathonAction(prevState: FormState, formData: Form
   const judgingDeadline = formData.get("judging_deadline") as string
   const minTeamSize = formData.get("min_team_size") as string
   const maxTeamSize = formData.get("max_team_size") as string
+  const rubricCriteriaJson = formData.get("rubric_criteria") as string
   let bannerImage = formData.get("banner_image") as string
   const bannerFile = formData.get("banner_file") as File | null
   const problemFile = formData.get("problem_file") as File | null
@@ -94,6 +96,7 @@ export async function createHackathonAction(prevState: FormState, formData: Form
   }
 
   const repository = new HackathonsRepository()
+  const rubricRepository = new RubricCriteriaRepository()
   const payload = {
     name,
     description,
@@ -122,6 +125,26 @@ export async function createHackathonAction(prevState: FormState, formData: Form
   try {
     createdHackathon = await repository.create(payload)
     console.log("createHackathonAction: Repository create result:", createdHackathon)
+    
+    // Save rubric criteria
+    if (rubricCriteriaJson) {
+      try {
+        const rubricCriteria = JSON.parse(rubricCriteriaJson)
+        for (let i = 0; i < rubricCriteria.length; i++) {
+          const criterion = rubricCriteria[i]
+          await rubricRepository.create({
+            hackathon_id: createdHackathon.id,
+            name: criterion.name,
+            description: criterion.description || null,
+            max_score: parseInt(criterion.maxScore),
+            weight: 1,
+            sort_order: i
+          })
+        }
+      } catch (e) {
+        console.log("Error parsing rubric criteria:", e)
+      }
+    }
     
     if (bannerFile && bannerFile.size > 0) {
       const validationResult = FileValidator.validate({

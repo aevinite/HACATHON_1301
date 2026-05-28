@@ -26,12 +26,20 @@ function formatLocalDateTime(dateString: string | null): string {
   return localDate.toISOString().slice(0, 16)
 }
 
+interface DraftRubricCriterion {
+  id: string
+  name: string
+  description: string
+  maxScore: string
+}
+
 export default function CreateHackathonForm() {
   const [state, formAction, isPending] = useActionState<FormState, FormData>(createHackathonAction, {})
   const [bannerFile, setBannerFile] = useState<File | null>(null)
   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
   const [problemFile, setProblemFile] = useState<File | null>(null)
   const [clientError, setClientError] = useState<string | null>(null)
+  const [rubricCriteria, setRubricCriteria] = useState<DraftRubricCriterion[]>([])
   const formId = "create-hackathon-form"
 
   const MAX_BANNER_SIZE = 5 * 1024 * 1024 // 5MB
@@ -62,6 +70,29 @@ export default function CreateHackathonForm() {
 
     setClientError(null)
     return true
+  }
+
+  const addDraftRubricCriterion = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const name = formData.get("criterionName") as string
+    const description = formData.get("criterionDescription") as string
+    const maxScore = formData.get("criterionMaxScore") as string
+
+    if (!name.trim() || !maxScore) return
+
+    setRubricCriteria(prev => [...prev, {
+      id: Math.random().toString(36).substring(2, 9),
+      name: name.trim(),
+      description: description.trim(),
+      maxScore
+    }])
+
+    e.currentTarget.reset()
+  }
+
+  const removeDraftRubricCriterion = (id: string) => {
+    setRubricCriteria(prev => prev.filter(c => c.id !== id))
   }
 
   const handleBannerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,6 +133,7 @@ export default function CreateHackathonForm() {
     if (problemFile) {
       formData.append("problem_file", problemFile)
     }
+    formData.append("rubric_criteria", JSON.stringify(rubricCriteria))
     formAction(formData)
   }
 
@@ -387,6 +419,93 @@ export default function CreateHackathonForm() {
                 required
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Judging Criteria / Rubric */}
+        <Card className="mb-0">
+          <CardHeader>
+            <CardTitle>Judging Criteria / Rubric</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Add New Criterion Form */}
+            <div className="p-4 border border-dashed rounded-lg space-y-3">
+              <h4 className="font-medium text-sm">Add New Criterion</h4>
+              <form onSubmit={addDraftRubricCriterion} className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="criterionName">Criterion Name</Label>
+                  <Input
+                    id="criterionName"
+                    name="criterionName"
+                    placeholder="e.g., Innovation"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="criterionDescription">Description (optional)</Label>
+                  <Textarea
+                    id="criterionDescription"
+                    name="criterionDescription"
+                    placeholder="Describe how to judge this criterion"
+                    rows={2}
+                  />
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="criterionMaxScore">Max Score</Label>
+                    <Input
+                      id="criterionMaxScore"
+                      name="criterionMaxScore"
+                      type="number"
+                      min="1"
+                      max="100"
+                      defaultValue="10"
+                      required
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <Button type="submit">Add Criterion</Button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            {/* Existing Draft Criteria */}
+            {rubricCriteria.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No judging criteria added yet.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {rubricCriteria.map((criterion) => (
+                  <div key={criterion.id} className="p-3 border rounded-md bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-medium">{criterion.name}</h4>
+                        {criterion.description && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {criterion.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium text-muted-foreground">
+                          Max Score: {criterion.maxScore}
+                        </span>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="h-8 px-2"
+                          onClick={() => removeDraftRubricCriterion(criterion.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
