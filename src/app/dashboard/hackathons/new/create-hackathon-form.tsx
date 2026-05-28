@@ -88,10 +88,13 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
 
   const addDraftRubricCriterion = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-    const name = formData.get("criterionName") as string
-    const description = formData.get("criterionDescription") as string
-    const maxScore = formData.get("criterionMaxScore") as string
+    const nameInput = document.getElementById('criterionName') as HTMLInputElement
+    const descriptionInput = document.getElementById('criterionDescription') as HTMLTextAreaElement
+    const maxScoreInput = document.getElementById('criterionMaxScore') as HTMLInputElement
+
+    const name = nameInput.value
+    const description = descriptionInput.value
+    const maxScore = maxScoreInput.value
 
     if (!name.trim() || !maxScore) return
 
@@ -102,7 +105,10 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
       maxScore
     }])
 
-    e.currentTarget.reset()
+    // Reset the inputs
+    nameInput.value = ''
+    descriptionInput.value = ''
+    maxScoreInput.value = '10'
   }
 
   const removeDraftRubricCriterion = (id: string) => {
@@ -168,6 +174,11 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
 
   return (
     <div className="p-6 md:p-8 lg:p-10 pb-10">
+      {/* Add Criterion Form (outside of main form to prevent nested submission) */}
+      <div className="hidden">
+        <form id="add-criterion-form" onSubmit={addDraftRubricCriterion}></form>
+      </div>
+      
       <form id={formId} action={handleSubmit} className="max-w-4xl mx-auto space-y-6 pb-20">
         <div className="mb-8">
           <Link href="/dashboard/hackathons" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
@@ -530,13 +541,14 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
             {/* Add New Criterion Form */}
             <div className="p-4 border border-dashed rounded-lg space-y-3">
               <h4 className="font-medium text-sm">Add New Criterion <span className="text-red-500">*</span></h4>
-              <form onSubmit={addDraftRubricCriterion} className="space-y-3">
+              <div className="space-y-3">
                 <div className="space-y-2">
                   <Label htmlFor="criterionName">Criterion Name</Label>
                   <Input
                     id="criterionName"
                     name="criterionName"
                     placeholder="e.g., Innovation"
+                    form="add-criterion-form"
                     required
                   />
                 </div>
@@ -547,6 +559,7 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
                     name="criterionDescription"
                     placeholder="Describe how to judge this criterion"
                     rows={2}
+                    form="add-criterion-form"
                   />
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
@@ -559,14 +572,15 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
                       min="1"
                       max="100"
                       defaultValue="10"
+                      form="add-criterion-form"
                       required
                     />
                   </div>
                   <div className="flex items-end">
-                    <Button type="submit">Add Criterion</Button>
+                    <Button type="submit" form="add-criterion-form">Add Criterion</Button>
                   </div>
                 </div>
-              </form>
+              </div>
             </div>
 
             {/* Existing Draft Criteria */}
