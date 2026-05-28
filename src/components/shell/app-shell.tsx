@@ -36,6 +36,12 @@ const getNavItems = (role: "admin" | "judge" | "team"): NavItem[] => {
     return [
       ...base,
       {
+        id: "hackathons",
+        title: "Hackathons",
+        href: "/dashboard/hackathons",
+        icon: <Trophy className="h-5 w-5" />,
+      },
+      {
         id: "manage-hackathons",
         title: "Manage Hackathons",
         href: "/dashboard/admin/hackathons",
