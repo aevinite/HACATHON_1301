@@ -86,12 +86,6 @@ export function getHackathonLifecycleStatus(hackathon: Hackathon): HackathonLife
   const submissionDeadline = hackathon.submission_deadline ? new Date(hackathon.submission_deadline) : null
   const judgingDeadline = hackathon.judging_deadline ? new Date(hackathon.judging_deadline) : null
 
-  console.log(`[DEBUG] Hackathon: ${hackathon.name}`);
-  console.log(`[DEBUG] Now: ${now.toISOString()}`);
-  console.log(`[DEBUG] Registration start: ${registrationStartDate?.toISOString()}`);
-  console.log(`[DEBUG] Registration deadline: ${registrationDeadline?.toISOString()}`);
-  console.log(`[DEBUG] Start date: ${startDate?.toISOString()}`);
-
   // Determine final relevant deadline
   const finalDeadline = 
     (judgingDeadline) || 
@@ -99,51 +93,39 @@ export function getHackathonLifecycleStatus(hackathon: Hackathon): HackathonLife
     null
 
   if (hackathon.results_published || hackathon.results_visible_to_participants) {
-    console.log(`[DEBUG] → completed (results published)`);
     return "completed"
   }
 
   if (finalDeadline && now > finalDeadline) {
-    console.log(`[DEBUG] → completed (past final deadline)`);
     return "completed"
   }
 
   if (startDate && now >= startDate) {
     if (submissionDeadline && now <= submissionDeadline) {
-      console.log(`[DEBUG] → running`);
       return "running"
     } else {
-      console.log(`[DEBUG] → judging`);
       return "judging"
     }
   }
 
   // First, check if registration start date is set
   if (registrationStartDate) {
-    // Get just the date part to compare (ignore time for testing, maybe?)
+    // Get just the date part to compare to handle timezone issues
     const regStartDateOnly = new Date(registrationStartDate.getFullYear(), registrationStartDate.getMonth(), registrationStartDate.getDate());
     const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    console.log(`[DEBUG] Today date only: ${todayDateOnly.toISOString()}`);
-    console.log(`[DEBUG] Reg start date only: ${regStartDateOnly.toISOString()}`);
-    console.log(`[DEBUG] Today >= reg start? ${todayDateOnly >= regStartDateOnly}`);
-    console.log(`[DEBUG] Now >= reg start? ${now >= registrationStartDate}`);
     
     // If registration start date is today or earlier
     if (todayDateOnly >= regStartDateOnly || now >= registrationStartDate) {
       // Check if registration is still open
       if (registrationDeadline && now < registrationDeadline) {
-        console.log(`[DEBUG] → registration_open`);
         return "registration_open"
       } else {
         // Registration has closed but hackathon not started yet
-        console.log(`[DEBUG] → registration_closed`);
         return "registration_closed"
       }
     }
   }
 
-  console.log(`[DEBUG] → not_started`);
   return "not_started"
 }
 
