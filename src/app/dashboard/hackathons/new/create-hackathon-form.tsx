@@ -138,17 +138,31 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
   }
 
   const handleSubmit = (formData: FormData) => {
+    // Client-side validation for required fields
+    if (!bannerFile) {
+      setClientError("Banner image is required")
+      return
+    }
+    if (!problemFile) {
+      setClientError("Problem statement PDF is required")
+      return
+    }
+    if (rubricCriteria.length === 0) {
+      setClientError("At least one rubric criterion is required")
+      return
+    }
+    if (selectedJudges.length === 0) {
+      setClientError("At least one judge must be selected")
+      return
+    }
     if (!validateFiles()) {
       return
     }
-    if (bannerFile) {
-      formData.append("banner_file", bannerFile)
-    }
-    if (problemFile) {
-      formData.append("problem_file", problemFile)
-    }
+    formData.append("banner_file", bannerFile)
+    formData.append("problem_file", problemFile)
     formData.append("rubric_criteria", JSON.stringify(rubricCriteria))
     formData.append("selected_judges", JSON.stringify(selectedJudges))
+    setClientError(null)
     formAction(formData)
   }
 
@@ -186,6 +200,7 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
                 defaultValue={state.values?.name || ""}
                 aria-invalid={!!state.fieldErrors?.name}
                 className={state.fieldErrors?.name ? "border-red-500 focus-visible:ring-red-500" : ""}
+                required
               />
               {state.fieldErrors?.name && (
                 <p className="text-sm text-red-500 font-medium">{state.fieldErrors?.name}</p>
@@ -203,6 +218,7 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
                 defaultValue={state.values?.description || ""}
                 aria-invalid={!!state.fieldErrors?.description}
                 className={state.fieldErrors?.description ? "border-red-500 focus-visible:ring-red-500" : ""}
+                required
               />
               {state.fieldErrors?.description && (
                 <p className="text-sm text-red-500 font-medium">{state.fieldErrors?.description}</p>
@@ -241,6 +257,7 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
                         defaultValue={state.values?.registration_start_date || ""}
                         aria-invalid={!!state.fieldErrors?.registration_start_date}
                         className={state.fieldErrors?.registration_start_date ? "border-red-500 focus-visible:ring-red-500" : ""}
+                        required
                       />
                       {state.fieldErrors?.registration_start_date && (
                         <p className="text-sm text-red-500 font-medium">{state.fieldErrors?.registration_start_date}</p>
@@ -269,6 +286,7 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
                         defaultValue={state.values?.registration_deadline || ""}
                         aria-invalid={!!state.fieldErrors?.registration_deadline}
                         className={state.fieldErrors?.registration_deadline ? "border-red-500 focus-visible:ring-red-500" : ""}
+                        required
                       />
                       {state.fieldErrors?.registration_deadline && (
                         <p className="text-sm text-red-500 font-medium">{state.fieldErrors?.registration_deadline}</p>
@@ -297,6 +315,7 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
                         defaultValue={state.values?.start_date || ""}
                         aria-invalid={!!state.fieldErrors?.start_date}
                         className={state.fieldErrors?.start_date ? "border-red-500 focus-visible:ring-red-500" : ""}
+                        required
                       />
                       {state.fieldErrors?.start_date && (
                         <p className="text-sm text-red-500 font-medium">{state.fieldErrors?.start_date}</p>
@@ -325,6 +344,7 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
                         defaultValue={state.values?.submission_deadline || ""}
                         aria-invalid={!!state.fieldErrors?.submission_deadline}
                         className={state.fieldErrors?.submission_deadline ? "border-red-500 focus-visible:ring-red-500" : ""}
+                        required
                       />
                       {state.fieldErrors?.submission_deadline && (
                         <p className="text-sm text-red-500 font-medium">{state.fieldErrors?.submission_deadline}</p>
@@ -352,6 +372,7 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
                         defaultValue={state.values?.judging_deadline || ""}
                         aria-invalid={!!state.fieldErrors?.judging_deadline}
                         className={state.fieldErrors?.judging_deadline ? "border-red-500 focus-visible:ring-red-500" : ""}
+                        required
                       />
                       {state.fieldErrors?.judging_deadline && (
                         <p className="text-sm text-red-500 font-medium">{state.fieldErrors?.judging_deadline}</p>
@@ -390,7 +411,7 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
               </div>
             ) : (
               <div className="space-y-2">
-                <Label htmlFor="banner_file">Upload Banner Image</Label>
+                <Label htmlFor="banner_file">Upload Banner Image <span className="text-red-500">*</span></Label>
                 <Input
                   id="banner_file"
                   name="banner_file"
@@ -426,7 +447,7 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
               </div>
             ) : (
               <div className="space-y-2">
-                <Label htmlFor="problem_file">Upload Problem Statement PDF</Label>
+                <Label htmlFor="problem_file">Upload Problem Statement PDF <span className="text-red-500">*</span></Label>
                 <Input
                   id="problem_file"
                   name="problem_file"
@@ -443,7 +464,7 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
         {/* Assigned Judges */}
         <Card>
           <CardHeader>
-            <CardTitle>Assigned Judges</CardTitle>
+            <CardTitle>Assigned Judges <span className="text-red-500">*</span></CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {allJudges.length === 0 ? (
@@ -522,7 +543,7 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
           <CardContent className="space-y-4">
             {/* Add New Criterion Form */}
             <div className="p-4 border border-dashed rounded-lg space-y-3">
-              <h4 className="font-medium text-sm">Add New Criterion</h4>
+              <h4 className="font-medium text-sm">Add New Criterion <span className="text-red-500">*</span></h4>
               <form onSubmit={addDraftRubricCriterion} className="space-y-3">
                 <div className="space-y-2">
                   <Label htmlFor="criterionName">Criterion Name</Label>

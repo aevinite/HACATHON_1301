@@ -77,6 +77,21 @@ export async function createHackathonAction(prevState: FormState, formData: Form
   if (!description.trim()) {
     fieldErrors.description = "Description is required"
   }
+  if (!registrationStartDate) {
+    fieldErrors.registration_start_date = "Registration start date is required"
+  }
+  if (!registrationDeadline) {
+    fieldErrors.registration_deadline = "Registration deadline is required"
+  }
+  if (!startDate) {
+    fieldErrors.start_date = "Hackathon start date is required"
+  }
+  if (!submissionDeadline) {
+    fieldErrors.submission_deadline = "Submission deadline is required"
+  }
+  if (!judgingDeadline) {
+    fieldErrors.judging_deadline = "Judging deadline is required"
+  }
 
   const dates = {
     registrationStart: registrationStartDate ? new Date(parseDatetimeLocalAsUTC(registrationStartDate)) : null,
@@ -99,10 +114,37 @@ export async function createHackathonAction(prevState: FormState, formData: Form
     fieldErrors.judging_deadline = "Judging ends must be after submissions close"
   }
 
-  if (Object.keys(fieldErrors).length > 0) {
-    console.log("createHackathonAction: Validation failed - field errors:", fieldErrors)
+  // Validate files and other requirements
+  let formError: string | undefined
+  if (!bannerFile || bannerFile.size === 0) {
+    formError = "Banner image is required"
+  }
+  if (!problemFile || problemFile.size === 0) {
+    formError = "Problem statement PDF is required"
+  }
+  
+  try {
+    const rubricCriteria = JSON.parse(rubricCriteriaJson)
+    if (!Array.isArray(rubricCriteria) || rubricCriteria.length === 0) {
+      formError = "At least one rubric criterion is required"
+    }
+  } catch {
+    formError = "At least one rubric criterion is required"
+  }
+  
+  try {
+    const selectedJudges = JSON.parse(selectedJudgesJson)
+    if (!Array.isArray(selectedJudges) || selectedJudges.length === 0) {
+      formError = "At least one judge must be selected"
+    }
+  } catch {
+    formError = "At least one judge must be selected"
+  }
+
+  if (Object.keys(fieldErrors).length > 0 || formError) {
+    console.log("createHackathonAction: Validation failed - field errors:", fieldErrors, "formError:", formError)
     console.log("========== createHackathonAction END (VALIDATION ERROR) ==========")
-    return { fieldErrors, formError: "Please fix the highlighted fields", values }
+    return { fieldErrors, formError: formError || "Please fix the highlighted fields", values }
   }
 
   const repository = new HackathonsRepository()
