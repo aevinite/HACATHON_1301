@@ -33,13 +33,29 @@ interface DraftRubricCriterion {
   maxScore: string
 }
 
-export default function CreateHackathonForm() {
+interface JudgeProfile {
+  id: string
+  full_name: string | null
+  avatar_url: string | null
+  role: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  email?: string | null
+}
+
+interface CreateHackathonFormProps {
+  allJudges: JudgeProfile[]
+}
+
+export default function CreateHackathonForm({ allJudges }: CreateHackathonFormProps) {
   const [state, formAction, isPending] = useActionState<FormState, FormData>(createHackathonAction, {})
   const [bannerFile, setBannerFile] = useState<File | null>(null)
   const [bannerPreview, setBannerPreview] = useState<string | null>(null)
   const [problemFile, setProblemFile] = useState<File | null>(null)
   const [clientError, setClientError] = useState<string | null>(null)
   const [rubricCriteria, setRubricCriteria] = useState<DraftRubricCriterion[]>([])
+  const [selectedJudges, setSelectedJudges] = useState<string[]>([])
   const formId = "create-hackathon-form"
 
   const MAX_BANNER_SIZE = 5 * 1024 * 1024 // 5MB
@@ -134,6 +150,7 @@ export default function CreateHackathonForm() {
       formData.append("problem_file", problemFile)
     }
     formData.append("rubric_criteria", JSON.stringify(rubricCriteria))
+    formData.append("selected_judges", JSON.stringify(selectedJudges))
     formAction(formData)
   }
 
@@ -420,6 +437,47 @@ export default function CreateHackathonForm() {
                   onChange={handleProblemFileChange}
                   className="border border-blue-500 focus-visible:ring-blue-500"
                 />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Assigned Judges */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Assigned Judges</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {allJudges.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No judge profiles exist yet.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {allJudges.map((judge) => {
+                  const isSelected = selectedJudges.includes(judge.id)
+                  return (
+                    <div key={judge.id} className="flex items-center gap-3 p-3 border rounded-md bg-muted/30">
+                      <input
+                        type="checkbox"
+                        id={`judge-${judge.id}`}
+                        checked={isSelected}
+                        onChange={(e) => {
+                          setSelectedJudges(prev => 
+                            e.target.checked 
+                              ? [...prev, judge.id] 
+                              : prev.filter(id => id !== judge.id)
+                          )
+                        }}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                      />
+                      <Label htmlFor={`judge-${judge.id}`} className="flex-1 cursor-pointer">
+                        <p className="font-medium">{judge.full_name || judge.email || "Judge"}</p>
+                        <p className="text-sm text-muted-foreground">{judge.email}</p>
+                      </Label>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </CardContent>

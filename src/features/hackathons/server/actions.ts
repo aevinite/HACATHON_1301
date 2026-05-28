@@ -52,6 +52,7 @@ export async function createHackathonAction(prevState: FormState, formData: Form
   const minTeamSize = formData.get("min_team_size") as string
   const maxTeamSize = formData.get("max_team_size") as string
   const rubricCriteriaJson = formData.get("rubric_criteria") as string
+  const selectedJudgesJson = formData.get("selected_judges") as string
   let bannerImage = formData.get("banner_image") as string
   const bannerFile = formData.get("banner_file") as File | null
   const problemFile = formData.get("problem_file") as File | null
@@ -97,6 +98,8 @@ export async function createHackathonAction(prevState: FormState, formData: Form
 
   const repository = new HackathonsRepository()
   const rubricRepository = new RubricCriteriaRepository()
+  const judgesRepo = new JudgesRepository()
+  const profilesRepo = new ProfilesRepository()
   const payload = {
     name,
     description,
@@ -143,6 +146,29 @@ export async function createHackathonAction(prevState: FormState, formData: Form
         }
       } catch (e) {
         console.log("Error parsing rubric criteria:", e)
+      }
+    }
+    
+    // Save selected judges
+    if (selectedJudgesJson) {
+      try {
+        const selectedJudgeIds = JSON.parse(selectedJudgesJson)
+        for (const userId of selectedJudgeIds) {
+          const userProfile = await profilesRepo.findById(userId)
+          if (userProfile) {
+            const judgeId = `judge-${userId.slice(0, 8)}-${Date.now()}`
+            await judgesRepo.assignJudgeToHackathon({
+              user_id: userId,
+              hackathon_id: createdHackathon.id,
+              judge_id: judgeId,
+              name: userProfile.full_name || "Judge",
+              email: "",
+              status: "active"
+            })
+          }
+        }
+      } catch (e) {
+        console.log("Error parsing selected judges:", e)
       }
     }
     
@@ -215,7 +241,8 @@ export async function createHackathonAction(prevState: FormState, formData: Form
   console.log("========== createHackathonAction END (SUCCESS) ==========")
   revalidatePath("/dashboard/hackathons")
   revalidatePath("/dashboard/admin/hackathons")
-  redirect(`/dashboard/admin/hackathons/${createdHackathon.id}/edit?returnTo=/dashboard/admin/hackathons&returnLabel=Back%20to%20Manage%20Hackathons&created=1`)
+  revalidatePath("/dashboard")
+  redirect("/dashboard")
 }
 
 export async function updateHackathonAction(prevState: FormState, formData: FormData): Promise<FormState> {
