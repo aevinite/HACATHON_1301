@@ -1,7 +1,6 @@
 
 import { notFound, redirect } from "next/navigation"
 import { HackathonsRepository } from "@/data/repositories/hackathons-repository"
-import { RubricCriteriaRepository } from "@/data/repositories/rubric-criteria-repository"
 import { JudgesRepository } from "@/data/repositories/judges-repository"
 import { ProfilesRepository } from "@/data/repositories/profiles-repository"
 import { getCurrentProfile } from "@/features/auth/server/session"
@@ -23,13 +22,11 @@ export default async function EditHackathonPage({ params, searchParams }: EditHa
   }
 
   const hackathonsRepo = new HackathonsRepository()
-  const rubricRepo = new RubricCriteriaRepository()
   const judgesRepo = new JudgesRepository()
   const profilesRepo = new ProfilesRepository()
   
-  const [hackathon, rubricCriteria, hackathonJudges, allJudges] = await Promise.all([
+  const [hackathon, hackathonJudges, allJudges] = await Promise.all([
     hackathonsRepo.findById(id),
-    rubricRepo.findByHackathonId(id),
     judgesRepo.findByHackathonId(id),
     profilesRepo.findAllJudges(),
   ])
@@ -63,7 +60,6 @@ export default async function EditHackathonPage({ params, searchParams }: EditHa
       )}
       <EditHackathonForm 
         hackathon={hackathon} 
-        rubricCriteria={rubricCriteria} 
         hackathonJudges={hackathonJudges}
         allJudges={allJudges}
         returnTo={returnTo} 

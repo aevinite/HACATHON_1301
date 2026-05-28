@@ -11,7 +11,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { updateHackathonAction } from "@/features/hackathons/server/actions"
-import { addRubricCriterionAction, deleteRubricCriterionAction } from "@/features/rubric/server/actions"
 
 interface Hackathon {
   id: string
@@ -27,17 +26,6 @@ interface Hackathon {
   max_team_size: number
   banner_image: string | null
   problem_statement: string | null
-}
-
-interface RubricCriterion {
-  id: string
-  hackathon_id: string
-  name: string
-  description: string | null
-  max_score: number
-  weight: number
-  sort_order: number
-  created_at: string
 }
 
 interface JudgeProfile {
@@ -64,7 +52,6 @@ interface JudgeAssignment {
 
 interface EditHackathonFormProps {
   hackathon: Hackathon
-  rubricCriteria: RubricCriterion[]
   hackathonJudges: JudgeAssignment[]
   allJudges: JudgeProfile[]
   returnTo: string
@@ -84,77 +71,8 @@ function formatLocalDateTime(dateString: string | null): string {
   return dateString.slice(0, 16)
 }
 
-function RubricCriterionForm({ hackathonId }: { hackathonId: string }) {
-  const [state, formAction, isPending] = useActionState(addRubricCriterionAction, {})
-
-  return (
-    <form action={formAction} className="space-y-3">
-      <input type="hidden" name="hackathonId" value={hackathonId} />
-      <div className="grid gap-3 md:grid-cols-2">
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="name">Criterion Name</Label>
-          <Input
-            id="name"
-            name="name"
-            placeholder="e.g., Innovation"
-            required
-          />
-        </div>
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="description">Description (optional)</Label>
-          <Textarea
-            id="description"
-            name="description"
-            placeholder="Describe how to judge this criterion"
-            rows={2}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="maxScore">Max Score</Label>
-          <Input
-            id="maxScore"
-            name="maxScore"
-            type="number"
-            min="1"
-            max="100"
-            defaultValue="10"
-            required
-          />
-        </div>
-      </div>
-      {state.formError && (
-        <p className="text-sm text-red-500">{state.formError}</p>
-      )}
-      <Button type="submit" disabled={isPending} size="sm">
-        {isPending ? "Adding..." : "Add Criterion"}
-      </Button>
-    </form>
-  )
-}
-
-function DeleteCriterionButton({ criterionId, hackathonId }: { criterionId: string, hackathonId: string }) {
-  const [state, formAction, isPending] = useActionState(deleteRubricCriterionAction, {})
-
-  return (
-    <form action={formAction}>
-      <input type="hidden" name="criterionId" value={criterionId} />
-      <input type="hidden" name="hackathonId" value={hackathonId} />
-      <Button
-        type="submit"
-        variant="destructive"
-        size="sm"
-        disabled={isPending}
-        className="h-8 px-2"
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
-    </form>
-  )
-}
-
 export default function EditHackathonForm({ 
   hackathon, 
-  rubricCriteria, 
   hackathonJudges, 
   allJudges, 
   returnTo, 
@@ -672,55 +590,6 @@ export default function EditHackathonForm({
           </CardContent>
         </Card>
       </form>
-
-      {/* Rubric - Outside main form */}
-      <div className="max-w-4xl mx-auto mt-6 pb-40" id="rubric-builder">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Judging Criteria / Rubric</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Rubric add/delete saves immediately because they are separate actions.
-            </p>
-            {/* Add New Criterion Form */}
-            <div className="p-4 border border-dashed rounded-lg space-y-3">
-              <h4 className="font-medium text-sm">Add New Criterion</h4>
-              <RubricCriterionForm hackathonId={hackathon.id} />
-            </div>
-
-            {/* Existing Criteria */}
-            {rubricCriteria.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No judging criteria added yet.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {rubricCriteria.map((criterion) => (
-                  <div key={criterion.id} className="p-3 border rounded-md bg-muted/30">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-medium">{criterion.name}</h4>
-                        {criterion.description && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {criterion.description}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium text-muted-foreground">
-                          Max Score: {criterion.max_score}
-                        </span>
-                        <DeleteCriterionButton criterionId={criterion.id} hackathonId={hackathon.id} />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Sticky Bottom Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 md:left-64 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-30">
