@@ -43,9 +43,9 @@ export function JoinHackathonButton({ hackathonId, isParticipating, hackathon, t
   const getButtonText = () => {
     if (!isParticipating && !registrationOpen) {
       if (hackathonStarted) {
-        return "Hackathon is running"
+        return "Hackathon Running"
       }
-      return "Registration closed"
+      return "Registration Closed"
     }
     return "Join Hackathon"
   }
