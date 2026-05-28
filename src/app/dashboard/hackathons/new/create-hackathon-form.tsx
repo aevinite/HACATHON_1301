@@ -86,29 +86,25 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
     return true
   }
 
-  const addDraftRubricCriterion = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const nameInput = document.getElementById('criterionName') as HTMLInputElement
-    const descriptionInput = document.getElementById('criterionDescription') as HTMLTextAreaElement
-    const maxScoreInput = document.getElementById('criterionMaxScore') as HTMLInputElement
-
-    const name = nameInput.value
-    const description = descriptionInput.value
-    const maxScore = maxScoreInput.value
-
-    if (!name.trim() || !maxScore) return
+  // Using state for new criterion inputs instead of form
+  const [newCriterionName, setNewCriterionName] = useState('')
+  const [newCriterionDescription, setNewCriterionDescription] = useState('')
+  const [newCriterionMaxScore, setNewCriterionMaxScore] = useState('10')
+  
+  const addDraftRubricCriterion = () => {
+    if (!newCriterionName.trim() || !newCriterionMaxScore) return
 
     setRubricCriteria(prev => [...prev, {
       id: Math.random().toString(36).substring(2, 9),
-      name: name.trim(),
-      description: description.trim(),
-      maxScore
+      name: newCriterionName.trim(),
+      description: newCriterionDescription.trim(),
+      maxScore: newCriterionMaxScore
     }])
 
     // Reset the inputs
-    nameInput.value = ''
-    descriptionInput.value = ''
-    maxScoreInput.value = '10'
+    setNewCriterionName('')
+    setNewCriterionDescription('')
+    setNewCriterionMaxScore('10')
   }
 
   const removeDraftRubricCriterion = (id: string) => {
@@ -174,11 +170,6 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
 
   return (
     <div className="p-6 md:p-8 lg:p-10 pb-10">
-      {/* Add Criterion Form (outside of main form to prevent nested submission) */}
-      <div className="hidden">
-        <form id="add-criterion-form" onSubmit={addDraftRubricCriterion}></form>
-      </div>
-      
       <form id={formId} action={handleSubmit} className="max-w-4xl mx-auto space-y-6 pb-20">
         <div className="mb-8">
           <Link href="/dashboard/hackathons" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
@@ -538,7 +529,7 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
             <CardTitle>Judging Criteria / Rubric</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Add New Criterion Form */}
+            {/* Add New Criterion (NO FORM - use state and button) */}
             <div className="p-4 border border-dashed rounded-lg space-y-3">
               <h4 className="font-medium text-sm">Add New Criterion <span className="text-red-500">*</span></h4>
               <div className="space-y-3">
@@ -546,9 +537,9 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
                   <Label htmlFor="criterionName">Criterion Name</Label>
                   <Input
                     id="criterionName"
-                    name="criterionName"
+                    value={newCriterionName}
+                    onChange={(e) => setNewCriterionName(e.target.value)}
                     placeholder="e.g., Innovation"
-                    form="add-criterion-form"
                     required
                   />
                 </div>
@@ -556,10 +547,10 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
                   <Label htmlFor="criterionDescription">Description (optional)</Label>
                   <Textarea
                     id="criterionDescription"
-                    name="criterionDescription"
+                    value={newCriterionDescription}
+                    onChange={(e) => setNewCriterionDescription(e.target.value)}
                     placeholder="Describe how to judge this criterion"
                     rows={2}
-                    form="add-criterion-form"
                   />
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
@@ -567,17 +558,21 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
                     <Label htmlFor="criterionMaxScore">Max Score</Label>
                     <Input
                       id="criterionMaxScore"
-                      name="criterionMaxScore"
                       type="number"
                       min="1"
                       max="100"
-                      defaultValue="10"
-                      form="add-criterion-form"
+                      value={newCriterionMaxScore}
+                      onChange={(e) => setNewCriterionMaxScore(e.target.value)}
                       required
                     />
                   </div>
                   <div className="flex items-end">
-                    <Button type="submit" form="add-criterion-form">Add Criterion</Button>
+                    <Button
+                      type="button"
+                      onClick={addDraftRubricCriterion}
+                    >
+                      Add Criterion
+                    </Button>
                   </div>
                 </div>
               </div>
