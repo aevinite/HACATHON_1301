@@ -94,12 +94,12 @@ export function HackathonCard({ hackathon, showCurrentIndicator = true, returnTo
         </div>
       </CardContent>
       <CardFooter className="pt-0 flex flex-col sm:flex-row gap-2 mt-auto w-full">
-        <Button asChild variant="secondary" size="sm" className="flex-1 truncate">
-          <Link href={`/dashboard/hackathons/${hackathon.id}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}&returnLabel=${encodeURIComponent(returnLabel || "Back to Hackathons")}` : ""}`}>
+        <Button asChild variant="secondary" size="sm" className="flex-1 w-full">
+          <Link href={`/dashboard/hackathons/${hackathon.id}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}&returnLabel=${encodeURIComponent(returnLabel || "Back to Hackathons")}` : ""}`} className="w-full text-center">
             View Details
           </Link>
         </Button>
-        <div className="flex-1">
+        <div className="flex-1 w-full">
           <JoinHackathonButton
             hackathonId={hackathon.id}
             isParticipating={isParticipating}
