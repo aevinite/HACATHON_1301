@@ -658,31 +658,17 @@ export default function EditHackathonForm({
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Team Settings</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="min_team_size">Min Team Size</Label>
-              <Input
-                id="min_team_size"
-                name="min_team_size"
-                type="number"
-                min="1"
-                max="10"
-                defaultValue={getNumberValue("min_team_size")}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="max_team_size">Max Team Size</Label>
-              <Input
-                id="max_team_size"
-                name="max_team_size"
-                type="number"
-                min="1"
-                max="10"
-                defaultValue={getNumberValue("max_team_size")}
-                required
-              />
-            </div>
+          <CardContent className="space-y-2">
+            <Label htmlFor="max_team_size">Max Team Size</Label>
+            <Input
+              id="max_team_size"
+              name="max_team_size"
+              type="number"
+              min="1"
+              max="4"
+              defaultValue={getNumberValue("max_team_size")}
+              required
+            />
           </CardContent>
         </Card>
       </form>

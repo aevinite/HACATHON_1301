@@ -507,31 +507,17 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
           <CardHeader>
             <CardTitle>Team Settings</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="min_team_size">Min Team Size</Label>
-              <Input
-                id="min_team_size"
-                name="min_team_size"
-                type="number"
-                min="1"
-                max="10"
-                defaultValue={state.values?.min_team_size || "1"}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="max_team_size">Max Team Size</Label>
-              <Input
-                id="max_team_size"
-                name="max_team_size"
-                type="number"
-                min="1"
-                max="10"
-                defaultValue={state.values?.max_team_size || "4"}
-                required
-              />
-            </div>
+          <CardContent className="space-y-2">
+            <Label htmlFor="max_team_size">Max Team Size</Label>
+            <Input
+              id="max_team_size"
+              name="max_team_size"
+              type="number"
+              min="1"
+              max="4"
+              defaultValue={state.values?.max_team_size || "4"}
+              required
+            />
           </CardContent>
         </Card>
 

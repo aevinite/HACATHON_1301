@@ -58,7 +58,7 @@ export async function createHackathonAction(prevState: FormState, formData: Form
   const registrationStartDate = formData.get("registration_start_date") as string
   const registrationDeadline = formData.get("registration_deadline") as string
   const judgingDeadline = formData.get("judging_deadline") as string
-  const minTeamSize = formData.get("min_team_size") as string
+  const minTeamSize = "1" // Fixed min team size
   const maxTeamSize = formData.get("max_team_size") as string
   const rubricCriteriaJson = formData.get("rubric_criteria") as string
   const selectedJudgesJson = formData.get("selected_judges") as string
@@ -91,6 +91,11 @@ export async function createHackathonAction(prevState: FormState, formData: Form
   }
   if (!judgingDeadline) {
     fieldErrors.judging_deadline = "Judging deadline is required"
+  }
+  // Validate max team size is between 1 and 4
+  const maxTeamSizeNum = maxTeamSize ? parseInt(maxTeamSize) : 0
+  if (isNaN(maxTeamSizeNum) || maxTeamSizeNum < 1 || maxTeamSizeNum > 4) {
+    formError = "Max team size must be between 1 and 4"
   }
 
   const dates = {
@@ -319,7 +324,7 @@ export async function updateHackathonAction(prevState: FormState, formData: Form
   const registrationStartDate = formData.get("registration_start_date") as string
   const registrationDeadline = formData.get("registration_deadline") as string
   const judgingDeadline = formData.get("judging_deadline") as string
-  const minTeamSize = formData.get("min_team_size") as string
+  const minTeamSize = "1" // Fixed min team size
   const maxTeamSize = formData.get("max_team_size") as string
   let bannerImage = formData.get("banner_image") as string
   const bannerFile = formData.get("banner_file") as File | null
@@ -333,6 +338,7 @@ export async function updateHackathonAction(prevState: FormState, formData: Form
   
   const fieldErrors: Record<string, string> = {}
   const values = getFormValues(formData)
+  let formError: string | undefined
 
   if (!id) {
     fieldErrors.id = "Hackathon ID is required"
@@ -342,6 +348,11 @@ export async function updateHackathonAction(prevState: FormState, formData: Form
   }
   if (!description.trim()) {
     fieldErrors.description = "Description is required"
+  }
+  // Validate max team size is between 1 and 4
+  const maxTeamSizeNum = maxTeamSize ? parseInt(maxTeamSize) : 0
+  if (isNaN(maxTeamSizeNum) || maxTeamSizeNum < 1 || maxTeamSizeNum > 4) {
+    formError = "Max team size must be between 1 and 4"
   }
 
   const dates = {
@@ -365,10 +376,10 @@ export async function updateHackathonAction(prevState: FormState, formData: Form
     fieldErrors.judging_deadline = "Judging ends must be after submissions close"
   }
 
-  if (Object.keys(fieldErrors).length > 0) {
-    console.log("updateHackathonAction: Validation failed - field errors:", fieldErrors)
+  if (Object.keys(fieldErrors).length > 0 || formError) {
+    console.log("updateHackathonAction: Validation failed - field errors:", fieldErrors, "formError:", formError)
     console.log("========== updateHackathonAction END (VALIDATION ERROR) ==========")
-    return { fieldErrors, formError: "Please fix the highlighted fields", values }
+    return { fieldErrors, formError: formError || "Please fix the highlighted fields", values }
   }
 
   const repository = new HackathonsRepository()
