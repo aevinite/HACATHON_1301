@@ -94,7 +94,7 @@ function AdminHackathonCard({ hackathon }: { hackathon: HackathonWithCounts }) {
             View Details
           </Link>
         </Button>
-        <Button asChild variant="default" size="sm" className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-cyan-500 text-white">
+        <Button asChild variant="secondary" size="sm" className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
           <Link href={`/dashboard/admin/hackathons/${hackathon.id}/edit`}>
             Edit
           </Link>
@@ -501,7 +501,7 @@ export default async function DashboardPage() {
           <div className="glass rounded-2xl p-4 sm:p-6 border border-white/5 mb-8">
             <h2 className="font-bold text-xl text-white mb-4">Quick Actions</h2>
             <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-              <Button asChild className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-cyan-500 text-white shadow-lg shadow-blue-500/20 w-full justify-start">
+              <Button asChild variant="secondary" className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200 w-full justify-start">
                 <Link href="/dashboard/hackathons/new">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Hackathon
