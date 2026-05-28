@@ -3,7 +3,7 @@
 
 import { useActionState, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Upload, X, FileText } from "lucide-react"
+import { ArrowLeft, Upload, X, FileText, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -444,17 +444,35 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
 
         {/* Assigned Judges */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Assigned Judges</CardTitle>
+            <Link href="/dashboard/admin/judges" passHref legacyBehavior>
+              <Button asChild variant="default" size="sm">
+                <a className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Judge
+                </a>
+              </Button>
+            </Link>
           </CardHeader>
           <CardContent className="space-y-4">
-            {allJudges.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No judge profiles exist yet.
-              </p>
+            {allJudges.filter(j => j.is_active).length === 0 ? (
+              <div className="text-center space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  No active judge profiles exist yet.
+                </p>
+                <Link href="/dashboard/admin/judges" passHref legacyBehavior>
+                  <Button asChild variant="default" size="sm">
+                    <a className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Go to Manage Judges
+                    </a>
+                  </Button>
+                </Link>
+              </div>
             ) : (
               <div className="space-y-3">
-                {allJudges.map((judge) => {
+                {allJudges.filter(j => j.is_active).map((judge) => {
                   const isSelected = selectedJudges.includes(judge.id)
                   return (
                     <div key={judge.id} className="flex items-center gap-3 p-3 border rounded-md bg-muted/30">
