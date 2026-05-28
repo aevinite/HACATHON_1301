@@ -31,7 +31,7 @@ export function AdminPageHeader({ title, description, action, eyebrow }: AdminPa
       </div>
       {action && (
         <div className="shrink-0">
-          <Button asChild>
+          <Button asChild variant="secondary" className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
             <Link href={action.href}>
               {action.label}
             </Link>

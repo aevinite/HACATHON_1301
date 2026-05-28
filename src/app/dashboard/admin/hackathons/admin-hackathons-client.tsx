@@ -324,7 +324,7 @@ export default function AdminHackathonsClient({ initialHackathons }: AdminHackat
                 View Details
               </Link>
             </Button>
-            <Button asChild variant="default" size="sm" className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-cyan-500 text-white">
+            <Button asChild variant="secondary" size="sm" className="w-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
               <Link href={`/dashboard/admin/hackathons/${hackathon.id}/edit?returnTo=/dashboard/admin/hackathons&returnLabel=Back%20to%20Manage%20Hackathons`}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
