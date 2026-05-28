@@ -1,7 +1,7 @@
 
 import Link from "next/link"
 import { LayoutDashboard, Trophy, Users, FileText, Search, Plus, Award, TrendingUp, Settings, Calendar, ArrowRight, UserRound, Gavel, Eye, Edit } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/empty-state"
