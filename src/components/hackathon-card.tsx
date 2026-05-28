@@ -101,14 +101,12 @@ export function HackathonCard({ hackathon, showCurrentIndicator = true, returnTo
             </Link>
           </Button>
         </div>
-        <div className="flex-1 w-full">
-          <JoinHackathonButton
-            hackathonId={hackathon.id}
-            isParticipating={isParticipating}
-            hackathon={hackathon}
-            team={team}
-          />
-        </div>
+        <JoinHackathonButton
+          hackathonId={hackathon.id}
+          isParticipating={isParticipating}
+          hackathon={hackathon}
+          team={team}
+        />
       </CardFooter>
     </Card>
   )

@@ -70,17 +70,21 @@ export function JoinHackathonButton({ hackathonId, isParticipating, hackathon, t
     )
   }
 
+  if (!registrationOpen) {
+    return null
+  }
+
   return (
     <div className="flex-1 w-full">
       <form action={formAction} className="w-full">
         <input type="hidden" name="hackathon_id" value={hackathonId} />
         <Button 
-          disabled={!registrationOpen || isPending} 
+          disabled={isPending} 
           variant="default"
           size="default"
           className="w-full"
         >
-          {isPending ? "Joining..." : getButtonText()}
+          {isPending ? "Joining..." : "Join Hackathon"}
         </Button>
       </form>
     </div>
