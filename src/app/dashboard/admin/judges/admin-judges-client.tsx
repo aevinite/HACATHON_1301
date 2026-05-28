@@ -2,6 +2,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -100,10 +101,20 @@ export default function AdminJudgesClient({ initialJudges, hackathons }: AdminJu
   return (
     <div className="space-y-6 min-h-screen grid-bg">
       <div className="mb-6">
-        <AdminPageHeader
-          title="Manage Judges"
-          description="View and manage judge assignments"
-        />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <AdminPageHeader
+            title="Manage Judges"
+            description="View and manage judge assignments"
+          />
+          <Link href="/dashboard/admin/users" passHref legacyBehavior>
+            <Button asChild variant="default">
+              <a className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Judge
+              </a>
+            </Button>
+          </Link>
+        </div>
         <div className="mt-4 rounded-lg border border-blue-500/20 bg-blue-500/5 p-4">
           <p className="text-sm text-blue-400">
             To add a judge, first create/sign up a user, then convert their role to judge from Manage Users.
