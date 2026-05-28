@@ -108,14 +108,21 @@ export function getHackathonLifecycleStatus(hackathon: Hackathon): HackathonLife
     }
   }
 
-  // Check if registration has started (now is after or equal to registration start date)
-  if (registrationStartDate && now >= registrationStartDate) {
-    // Check if registration is still open
-    if (registrationDeadline && now < registrationDeadline) {
-      return "registration_open"
-    } else {
-      // Registration has closed but hackathon not started yet
-      return "registration_closed"
+  // First, check if registration start date is set and compare with more tolerance - maybe timezone issues?
+  if (registrationStartDate) {
+    // Get just the date part to compare (ignore time for testing, maybe?)
+    const regStartDateOnly = new Date(registrationStartDate.getFullYear(), registrationStartDate.getMonth(), registrationStartDate.getDate());
+    const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    // If registration start date is today or earlier
+    if (todayDateOnly >= regStartDateOnly || now >= registrationStartDate) {
+      // Check if registration is still open
+      if (registrationDeadline && now < registrationDeadline) {
+        return "registration_open"
+      } else {
+        // Registration has closed but hackathon not started yet
+        return "registration_closed"
+      }
     }
   }
 
