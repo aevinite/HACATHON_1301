@@ -91,15 +91,29 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
   const [newCriterionDescription, setNewCriterionDescription] = useState('')
   const [newCriterionMaxScore, setNewCriterionMaxScore] = useState('10')
   
-  const addDraftRubricCriterion = () => {
-    if (!newCriterionName.trim() || !newCriterionMaxScore) return
+  const addDraftRubricCriterion = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault()
+    }
+    console.log('addDraftRubricCriterion called!')
+    console.log('newCriterionName:', newCriterionName)
+    console.log('newCriterionMaxScore:', newCriterionMaxScore)
+    console.log('rubricCriteria before:', rubricCriteria)
+    
+    if (!newCriterionName.trim() || !newCriterionMaxScore) {
+      console.log('Validation failed: name or max score missing')
+      return
+    }
 
-    setRubricCriteria(prev => [...prev, {
+    const newCriteria = [...rubricCriteria, {
       id: Math.random().toString(36).substring(2, 9),
       name: newCriterionName.trim(),
       description: newCriterionDescription.trim(),
       maxScore: newCriterionMaxScore
-    }])
+    }]
+    console.log('rubricCriteria after:', newCriteria)
+    
+    setRubricCriteria(newCriteria)
 
     // Reset the inputs
     setNewCriterionName('')
@@ -168,6 +182,7 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
     formAction(formData)
   }
 
+  console.log('Current rubricCriteria:', rubricCriteria)
   return (
     <div className="p-6 md:p-8 lg:p-10 pb-10">
       <form id={formId} action={handleSubmit} className="max-w-4xl mx-auto space-y-6 pb-20">
@@ -569,7 +584,7 @@ export default function CreateHackathonForm({ allJudges }: CreateHackathonFormPr
                   <div className="flex items-end">
                     <Button
                       type="button"
-                      onClick={addDraftRubricCriterion}
+                      onClick={(e) => addDraftRubricCriterion(e)}
                     >
                       Add Criterion
                     </Button>
