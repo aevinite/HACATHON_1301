@@ -35,59 +35,70 @@ const formatHackathonDate = (date: string | null) => {
 function AdminHackathonCard({ hackathon }: { hackathon: HackathonWithCounts }) {
   const lifecycleStatus = getHackathonLifecycleStatus(hackathon)
 
+  const formatDate = (date: string | null) => {
+    if (!date) return "TBD"
+    return new Date(date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    })
+  }
+
   return (
-    <div className="glass rounded-2xl p-6 border border-white/10 hover:border-blue-500/40 transition-all hover:shadow-xl hover:shadow-blue-500/10">
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-xl font-bold text-white">{hackathon.name}</h3>
-            <Badge variant="default" className={getHackathonStatusBadgeClass(lifecycleStatus)}>
-              {getHackathonStatusLabel(lifecycleStatus)}
-            </Badge>
-            {hackathon.is_public && (
-              <Badge variant="default" className="bg-blue-500/10 text-blue-400 border-blue-500/20">
-                Public
-              </Badge>
-            )}
+    <Card className="overflow-hidden transition-all duration-200 hover:shadow-md hover:border-primary/20 group flex flex-col h-full glass border border-white/10">
+      <div className="w-full aspect-[16/9] bg-muted flex items-center justify-center group-hover:scale-105 transition-transform duration-500 overflow-hidden rounded-t-lg">
+        {hackathon.banner_image ? (
+          <img
+            src={hackathon.banner_image}
+            alt={hackathon.name}
+            className="w-full h-full object-contain"
+          />
+        ) : (
+          <div className="h-full w-full flex items-center justify-center">
+            <Trophy className="h-12 w-12 text-slate-600/50" />
           </div>
-          <p className="text-sm text-slate-400 line-clamp-2 mb-4">
-            {hackathon.description}
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="rounded-xl p-3 bg-white/5 border border-white/5">
-              <p className="text-xs text-slate-500 mb-1">Teams</p>
-              <p className="text-xl font-bold text-white">{hackathon.team_count}</p>
-            </div>
-            <div className="rounded-xl p-3 bg-white/5 border border-white/5">
-              <p className="text-xs text-slate-500 mb-1">Projects</p>
-              <p className="text-xl font-bold text-white">{hackathon.project_count}</p>
-            </div>
-            <div className="rounded-xl p-3 bg-white/5 border border-white/5">
-              <p className="text-xs text-slate-500 mb-1">Start</p>
-              <p className="text-sm font-medium text-slate-300">{formatHackathonDate(hackathon.start_date)}</p>
-            </div>
-            <div className="rounded-xl p-3 bg-white/5 border border-white/5">
-              <p className="text-xs text-slate-500 mb-1">Deadline</p>
-              <p className="text-sm font-medium text-slate-300">{formatHackathonDate(hackathon.submission_deadline)}</p>
-            </div>
+        )}
+      </div>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1.5 flex-1 min-w-0">
+            <CardTitle className="line-clamp-1 text-lg leading-tight text-white">{hackathon.name}</CardTitle>
+            <CardDescription className="line-clamp-2 leading-relaxed text-slate-400">
+              {hackathon.description}
+            </CardDescription>
+          </div>
+          <Badge className={getHackathonStatusBadgeClass(lifecycleStatus)} variant="secondary">
+            {getHackathonStatusLabel(lifecycleStatus)}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0 pb-3">
+        <div className="flex items-center gap-6 text-sm text-slate-400">
+          <div className="flex items-center gap-1.5">
+            <Calendar className="h-4 w-4" />
+            <span>{formatDate(hackathon.start_date)}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Trophy className="h-4 w-4" />
+            <span>
+              {hackathon.min_team_size}-{hackathon.max_team_size} members
+            </span>
           </div>
         </div>
-      </div>
-      <div className="pt-4 mt-4 border-t border-white/10 flex flex-wrap gap-2 justify-end">
-        <Button variant="secondary" size="sm" asChild className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
+      </CardContent>
+      <CardFooter className="pt-0 flex flex-col sm:flex-row gap-2 mt-auto">
+        <Button asChild variant="secondary" size="sm" className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
           <Link href={`/dashboard/admin/hackathons/${hackathon.id}`}>
-            <Eye className="h-4 w-4 mr-2" />
             View Details
           </Link>
         </Button>
-        <Button variant="secondary" size="sm" asChild className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
+        <Button asChild variant="default" size="sm" className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-cyan-500 text-white">
           <Link href={`/dashboard/admin/hackathons/${hackathon.id}/edit`}>
-            <Edit className="h-4 w-4 mr-2" />
             Edit
           </Link>
         </Button>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   )
 }
 
@@ -99,7 +110,7 @@ function HackathonGroup({ title, hackathons }: { title: string; hackathons: Hack
   return (
     <div className="space-y-4">
       <h3 className="text-lg sm:text-xl font-semibold text-white">{title}</h3>
-      <div className="grid gap-4">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {hackathons.map((h) => (
           <AdminHackathonCard key={h.id} hackathon={h} />
         ))}
