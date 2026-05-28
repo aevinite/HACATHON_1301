@@ -89,7 +89,8 @@ function AdminHackathonCard({ hackathon }: { hackathon: HackathonWithCounts }) {
       </CardContent>
       <CardFooter className="pt-0 flex flex-col sm:flex-row gap-2 mt-auto">
         <Button asChild variant="secondary" size="sm" className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
-          <Link href={`/dashboard/admin/hackathons/${hackathon.id}`}>
+          <Link href={`/dashboard/hackathons/${hackathon.id}?returnTo=/dashboard&returnLabel=Back%20to%20Admin%20Dashboard`}>
+            <Eye className="h-4 w-4 mr-2" />
             View Details
           </Link>
         </Button>
