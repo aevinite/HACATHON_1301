@@ -1,6 +1,6 @@
 
 import Link from "next/link"
-import { LayoutDashboard, Trophy, Users, FileText, Search, Plus, Award, TrendingUp, Settings, Calendar, ArrowRight, UserRound, Gavel } from "lucide-react"
+import { LayoutDashboard, Trophy, Users, FileText, Search, Plus, Award, TrendingUp, Settings, Calendar, ArrowRight, UserRound, Gavel, Eye, Edit } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -13,6 +13,100 @@ import { ScoresRepository } from "@/data/repositories/scores-repository"
 import { ProfilesRepository } from "@/data/repositories/profiles-repository"
 import { JudgesRepository } from "@/data/repositories/judges-repository"
 import { formatDate } from "@/lib/format-date"
+import { getHackathonLifecycleStatus, getHackathonStatusLabel, getHackathonStatusBadgeClass } from "@/lib/format-hackathon-status"
+import type { Database } from "@/types/supabase"
+
+type HackathonWithCounts = Database["public"]["Tables"]["hackathons"]["Row"] & {
+  team_count: number
+  project_count: number
+}
+
+const formatHackathonDate = (date: string | null) => {
+  if (!date) return "—"
+  return new Date(date).toLocaleString("en-IN", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
+function AdminHackathonCard({ hackathon }: { hackathon: HackathonWithCounts }) {
+  const lifecycleStatus = getHackathonLifecycleStatus(hackathon)
+
+  return (
+    <div className="glass rounded-2xl p-6 border border-white/10 hover:border-blue-500/40 transition-all hover:shadow-xl hover:shadow-blue-500/10">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <h3 className="text-xl font-bold text-white">{hackathon.name}</h3>
+            <Badge variant="default" className={getHackathonStatusBadgeClass(lifecycleStatus)}>
+              {getHackathonStatusLabel(lifecycleStatus)}
+            </Badge>
+            {hackathon.is_public && (
+              <Badge variant="default" className="bg-blue-500/10 text-blue-400 border-blue-500/20">
+                Public
+              </Badge>
+            )}
+          </div>
+          <p className="text-sm text-slate-400 line-clamp-2 mb-4">
+            {hackathon.description}
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="rounded-xl p-3 bg-white/5 border border-white/5">
+              <p className="text-xs text-slate-500 mb-1">Teams</p>
+              <p className="text-xl font-bold text-white">{hackathon.team_count}</p>
+            </div>
+            <div className="rounded-xl p-3 bg-white/5 border border-white/5">
+              <p className="text-xs text-slate-500 mb-1">Projects</p>
+              <p className="text-xl font-bold text-white">{hackathon.project_count}</p>
+            </div>
+            <div className="rounded-xl p-3 bg-white/5 border border-white/5">
+              <p className="text-xs text-slate-500 mb-1">Start</p>
+              <p className="text-sm font-medium text-slate-300">{formatHackathonDate(hackathon.start_date)}</p>
+            </div>
+            <div className="rounded-xl p-3 bg-white/5 border border-white/5">
+              <p className="text-xs text-slate-500 mb-1">Deadline</p>
+              <p className="text-sm font-medium text-slate-300">{formatHackathonDate(hackathon.submission_deadline)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="pt-4 mt-4 border-t border-white/10 flex flex-wrap gap-2 justify-end">
+        <Button variant="secondary" size="sm" asChild className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
+          <Link href={`/dashboard/admin/hackathons/${hackathon.id}`}>
+            <Eye className="h-4 w-4 mr-2" />
+            View Details
+          </Link>
+        </Button>
+        <Button variant="secondary" size="sm" asChild className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
+          <Link href={`/dashboard/admin/hackathons/${hackathon.id}/edit`}>
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
+          </Link>
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function HackathonGroup({ title, hackathons }: { title: string; hackathons: HackathonWithCounts[] }) {
+  if (hackathons.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg sm:text-xl font-semibold text-white">{title}</h3>
+      <div className="grid gap-4">
+        {hackathons.map((h) => (
+          <AdminHackathonCard key={h.id} hackathon={h} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default async function DashboardPage() {
   const profile = await getCurrentProfile()
@@ -21,7 +115,7 @@ export default async function DashboardPage() {
   const projectsRepo = new ProjectsRepository()
   const projects = await projectsRepo.findAllWithDetails()
   const hackathonsRepo = new HackathonsRepository()
-  const hackathons = await hackathonsRepo.findAll()
+  const hackathons = await hackathonsRepo.findAllWithCounts()
   const teamsRepo = new TeamsRepository()
   const teams = await teamsRepo.findAll()
   const scoresRepo = new ScoresRepository()
@@ -29,6 +123,14 @@ export default async function DashboardPage() {
   const profilesRepo = new ProfilesRepository()
   const judges = await profilesRepo.findAllJudges()
   const allProfiles = await profilesRepo.findAll()
+
+  // Group hackathons by lifecycle status for admin
+  const registrationOpenHackathons = hackathons.filter(h => getHackathonLifecycleStatus(h) === "registration_open")
+  const registrationClosedHackathons = hackathons.filter(h => getHackathonLifecycleStatus(h) === "registration_closed")
+  const runningHackathons = hackathons.filter(h => getHackathonLifecycleStatus(h) === "running")
+  const judgingHackathons = hackathons.filter(h => getHackathonLifecycleStatus(h) === "judging")
+  const completedHackathons = hackathons.filter(h => getHackathonLifecycleStatus(h) === "completed")
+  const notStartedHackathons = hackathons.filter(h => getHackathonLifecycleStatus(h) === "not_started")
 
   // Participant/Team Dashboard
   if (role === "team") {
@@ -41,7 +143,7 @@ export default async function DashboardPage() {
 
     return (
       <div className="min-h-screen grid-bg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
           <div className="flex items-start justify-between gap-4 mb-8">
             <div>
               <h1 className="font-bold text-2xl sm:text-3xl text-white">Dashboard</h1>
@@ -134,7 +236,7 @@ export default async function DashboardPage() {
     const judgesRepo = new JudgesRepository()
     const judgeAssignments = await judgesRepo.findByUserId(user.id)
     const assignedHackathonIds = judgeAssignments.map(a => a.hackathon_id)
-    
+
     const filteredProjects = projects.filter(p => assignedHackathonIds.includes(p.hackathon_id))
     const totalProjects = filteredProjects.length
     const reviewed = filteredProjects.filter(p => p.average_score !== null).length
@@ -146,7 +248,7 @@ export default async function DashboardPage() {
 
     return (
       <div className="min-h-screen grid-bg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
           <div className="flex items-start justify-between gap-4 mb-8">
             <div>
               <h1 className="font-bold text-2xl sm:text-3xl text-white">Judge Dashboard</h1>
@@ -178,7 +280,7 @@ export default async function DashboardPage() {
                   <p className="text-sm text-slate-400 mt-1">Completion</p>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-slate-300">
                   <span>Progress</span>
@@ -232,7 +334,7 @@ export default async function DashboardPage() {
 
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-white">Projects to Review</h2>
-            
+
             {assignedHackathonIds.length === 0 ? (
               <div className="glass rounded-2xl p-12 text-center border border-white/5">
                 <Users className="h-12 w-12 text-blue-500 mx-auto mb-4" />
@@ -321,11 +423,11 @@ export default async function DashboardPage() {
   if (role === "admin") {
     return (
       <div className="min-h-screen grid-bg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
           <div className="flex items-start justify-between gap-4 mb-8">
             <div>
-              <h1 className="font-bold text-2xl sm:text-3xl text-white">Admin Dashboard</h1>
-              <p className="text-slate-400 mt-1.5">
+              <h1 className="font-bold text-xl sm:text-2xl lg:text-3xl text-white">Admin Dashboard</h1>
+              <p className="text-slate-400 mt-1.5 text-sm sm:text-base">
                 Use this dashboard to manage hackathons, users, judging, teams, and submissions.
               </p>
             </div>
@@ -334,7 +436,7 @@ export default async function DashboardPage() {
           {/* Admin Overview */}
           <div className="space-y-2 mb-6">
             <h2 className="text-xl font-semibold text-white">Admin Overview</h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
               <div className="rounded-2xl p-5 bg-gradient-to-br from-blue-600/20 to-blue-500/5 border border-blue-500/20">
                 <div className="flex items-start justify-between">
                   <div>
@@ -343,7 +445,7 @@ export default async function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <div className="rounded-2xl p-5 bg-gradient-to-br from-cyan-600/20 to-cyan-500/5 border border-cyan-500/20">
+              <div className="rounded-2xl p-5 bg-gradient-to-br from-blue-600/20 to-blue-500/5 border border-blue-500/20">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-slate-400 text-sm mb-1">Total Teams</p>
@@ -351,7 +453,7 @@ export default async function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <div className="rounded-2xl p-5 bg-gradient-to-br from-purple-600/20 to-purple-500/5 border border-purple-500/20">
+              <div className="rounded-2xl p-5 bg-gradient-to-br from-blue-600/20 to-blue-500/5 border border-blue-500/20">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-slate-400 text-sm mb-1">Total Projects</p>
@@ -359,7 +461,7 @@ export default async function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <div className="rounded-2xl p-5 bg-gradient-to-br from-emerald-600/20 to-emerald-500/5 border border-emerald-500/20">
+              <div className="rounded-2xl p-5 bg-gradient-to-br from-blue-600/20 to-blue-500/5 border border-blue-500/20">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-slate-400 text-sm mb-1">Total Judges</p>
@@ -367,7 +469,7 @@ export default async function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <div className="rounded-2xl p-5 bg-gradient-to-br from-yellow-600/20 to-yellow-500/5 border border-yellow-500/20">
+              <div className="rounded-2xl p-5 bg-gradient-to-br from-blue-600/20 to-blue-500/5 border border-blue-500/20">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-slate-400 text-sm mb-1">Total Users</p>
@@ -379,45 +481,65 @@ export default async function DashboardPage() {
           </div>
 
           {/* Quick Actions */}
-          <div className="glass rounded-2xl p-6 border border-white/5">
+          <div className="glass rounded-2xl p-4 sm:p-6 border border-white/5 mb-8">
             <h2 className="font-bold text-xl text-white mb-4">Quick Actions</h2>
-            <div className="flex flex-wrap gap-3">
-              <Button asChild className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-cyan-500 text-white shadow-lg shadow-blue-500/20">
-                <Link href="/dashboard/admin/hackathons">
-                  Manage Hackathons
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
-                <Link href="/dashboard/admin/teams">
-                  Manage Teams
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
-                <Link href="/dashboard/admin/projects">
-                  Manage Projects
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
-                <Link href="/dashboard/admin/judges">
-                  Manage Judges
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
-                <Link href="/dashboard/admin/users">
-                  Manage Users
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
-                <Link href="/dashboard/leaderboard">
-                  Leaderboard
-                </Link>
-              </Button>
-              <Button asChild className="bg-gradient-to-r from-pink-600 to-pink-500 hover:from-pink-500 hover:to-rose-500 text-white shadow-lg shadow-pink-500/20">
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+              <Button asChild className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-cyan-500 text-white shadow-lg shadow-blue-500/20 w-full justify-start">
                 <Link href="/dashboard/hackathons/new">
+                  <Plus className="h-4 w-4 mr-2" />
                   Create Hackathon
                 </Link>
               </Button>
+              <Button asChild variant="secondary" className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200 w-full justify-start">
+                <Link href="/dashboard/leaderboard">
+                  <Award className="h-4 w-4 mr-2" />
+                  Leaderboard
+                </Link>
+              </Button>
+              <Button asChild variant="secondary" className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200 w-full justify-start">
+                <Link href="/dashboard/admin/judges">
+                  <UserRound className="h-4 w-4 mr-2" />
+                  Manage Judges
+                </Link>
+              </Button>
             </div>
+          </div>
+
+          {/* Hackathons Section */}
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">Active Hackathons</h2>
+              <Button asChild variant="secondary" size="default" className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/40 text-slate-200">
+                <Link href="/dashboard/admin/hackathons">
+                  View All
+                </Link>
+              </Button>
+            </div>
+
+            <HackathonGroup
+              title="Registration Open"
+              hackathons={registrationOpenHackathons}
+            />
+            <HackathonGroup
+              title="Starting Soon"
+              hackathons={registrationClosedHackathons}
+            />
+            <HackathonGroup
+              title="Running"
+              hackathons={runningHackathons}
+            />
+            <HackathonGroup
+              title="Judging"
+              hackathons={judgingHackathons}
+            />
+            <HackathonGroup
+              title="Not Started"
+              hackathons={notStartedHackathons}
+            />
+            <HackathonGroup
+              title="Completed"
+              hackathons={completedHackathons}
+            />
           </div>
         </div>
       </div>
@@ -427,7 +549,7 @@ export default async function DashboardPage() {
   // Fallback to participant dashboard
   return (
     <div className="min-h-screen grid-bg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8">
         <div className="flex items-start justify-between gap-4 mb-8">
           <div>
             <h1 className="font-bold text-2xl sm:text-3xl text-white">Dashboard</h1>

@@ -92,14 +92,21 @@ export function LoginForm({ message }: { message?: string | null }) {
               {demoAccounts.map((account) => (
                 <div
                   key={account.name}
-                  className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
-                  onClick={() => handleDemoLogin(account.email, account.password)}
+                  className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                 >
                   <div>
                     <p className="font-medium">{account.name}</p>
                     <p className="text-sm text-muted-foreground">{account.email}</p>
                   </div>
-                  <Button variant="ghost" size="sm">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      handleDemoLogin(account.email, account.password);
+                    }}
+                  >
                     Use
                   </Button>
                 </div>

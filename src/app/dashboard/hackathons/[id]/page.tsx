@@ -154,9 +154,15 @@ export default async function HackathonDetailPage({
       {/* HERO/BANNER SECTION */}
       <div className="relative rounded-3xl overflow-hidden mb-8 group">
         {hackathon.banner_image ? (
-          <div className="h-64 md:h-80 w-full bg-cover bg-center" style={{ backgroundImage: `url(${hackathon.banner_image})` }} />
+          <div className="w-full aspect-[16/9] bg-muted flex items-center justify-center">
+            <img
+              src={hackathon.banner_image}
+              alt={hackathon.name}
+              className="w-full h-full object-contain"
+            />
+          </div>
         ) : (
-          <div className="h-64 md:h-80 w-full bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900" />
+          <div className="w-full aspect-[16/9] bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         

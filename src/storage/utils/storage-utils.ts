@@ -17,14 +17,7 @@ export class StorageService {
 
   static async getPublicUrl(bucket: BucketName, path: string) {
     const supabase = await this.getClient()
-    const { data } = supabase.storage.from(bucket).getPublicUrl(path, {
-      transform: BUCKET_CONFIG[bucket].public
-        ? {
-            width: 800,
-            quality: 85,
-          }
-        : undefined,
-    })
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path)
     return data.publicUrl
   }
 

@@ -167,7 +167,38 @@ export default function EditHackathonForm({
   const [bannerFile, setBannerFile] = useState<File | null>(null)
   const [bannerPreview, setBannerPreview] = useState<string | null>(hackathon.banner_image)
   const [problemFile, setProblemFile] = useState<File | null>(null)
+  const [clientError, setClientError] = useState<string | null>(null)
   const formId = "edit-hackathon-form"
+
+  const MAX_BANNER_SIZE = 5 * 1024 * 1024 // 5MB
+  const MAX_PDF_SIZE = 10 * 1024 * 1024 // 10MB
+
+  const validateFiles = (): boolean => {
+    if (bannerFile) {
+      if (!bannerFile.type.startsWith("image/")) {
+        setClientError("Banner must be an image file.")
+        return false
+      }
+      if (bannerFile.size > MAX_BANNER_SIZE) {
+        setClientError("File upload is too large. Banner must be under 5MB and problem statement PDF under 10MB.")
+        return false
+      }
+    }
+
+    if (problemFile) {
+      if (problemFile.type !== "application/pdf") {
+        setClientError("Problem statement must be a PDF file.")
+        return false
+      }
+      if (problemFile.size > MAX_PDF_SIZE) {
+        setClientError("File upload is too large. Banner must be under 5MB and problem statement PDF under 10MB.")
+        return false
+      }
+    }
+
+    setClientError(null)
+    return true
+  }
 
   useEffect(() => {
     if (state.values && state.values.selectedJudges) {
@@ -267,6 +298,9 @@ export default function EditHackathonForm({
       <form 
         id={formId} 
         action={(formData) => {
+          if (!validateFiles()) {
+            return
+          }
           handleFormSubmit(formData)
           formAction(formData)
         }} 
@@ -284,9 +318,9 @@ export default function EditHackathonForm({
           </Link>
         </div>
 
-        {state.formError && (
+        {(state.formError || clientError) && (
           <div className="text-sm text-red-500 bg-red-50 p-4 rounded-lg border border-red-200">
-            {state.formError}
+            {state.formError || clientError}
           </div>
         )}
 
@@ -348,8 +382,8 @@ export default function EditHackathonForm({
             </div>
             <div className="space-y-4">
               {bannerPreview ? (
-                <div className="relative rounded-lg overflow-hidden border">
-                  <img src={bannerPreview} alt="Current banner" className="w-full h-48 object-cover" />
+                <div className="relative rounded-lg overflow-hidden border border-blue-500/30">
+                  <img src={bannerPreview} alt="Current banner" className="w-full h-48 object-contain" />
                   {bannerFile && (
                     <Button
                       type="button"
@@ -376,19 +410,8 @@ export default function EditHackathonForm({
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   onChange={handleBannerFileChange}
+                  className="border border-blue-500 focus-visible:ring-blue-500"
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="banner_image">Or use Banner Image URL (optional)</Label>
-                <Input
-                  id="banner_image"
-                  name="banner_image"
-                  placeholder="https://example.com/banner.jpg"
-                  defaultValue={getStringValue("banner_image")}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Use a direct image URL ending in .jpg, .png, .webp, etc.
-                </p>
               </div>
             </div>
           </CardContent>
@@ -626,6 +649,7 @@ export default function EditHackathonForm({
                 type="file"
                 accept="application/pdf"
                 onChange={handleProblemFileChange}
+                className="border border-blue-500 focus-visible:ring-blue-500"
               />
             </div>
           </CardContent>

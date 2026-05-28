@@ -59,7 +59,7 @@ export async function loginAction(prevState: { error: string }, formData: FormDa
   
   let redirectUrl: string = PROTECTED_ROUTES.DASHBOARD
   if (role === "admin") {
-    redirectUrl = "/dashboard/admin/hackathons"
+    redirectUrl = "/dashboard"
   } else if (role === "team") {
     redirectUrl = "/dashboard/hackathons"
   } else if (role === "judge") {

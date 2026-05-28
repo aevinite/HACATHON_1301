@@ -53,9 +53,15 @@ export function HackathonCard({ hackathon, showCurrentIndicator = true, returnTo
           </div>
         )}
       </div>
-      <div className="h-48 w-full bg-cover bg-center group-hover:scale-105 transition-transform duration-500" style={{ backgroundImage: hackathon.banner_image ? `url(${hackathon.banner_image})` : 'none' }}>
-        {!hackathon.banner_image && (
-          <div className="h-full w-full bg-slate-800/50 flex items-center justify-center">
+      <div className="w-full aspect-[16/9] bg-muted flex items-center justify-center group-hover:scale-105 transition-transform duration-500 overflow-hidden rounded-t-lg">
+        {hackathon.banner_image ? (
+          <img
+            src={hackathon.banner_image}
+            alt={hackathon.name}
+            className="w-full h-full object-contain"
+          />
+        ) : (
+          <div className="h-full w-full flex items-center justify-center">
             <Trophy className="h-12 w-12 text-slate-600/50" />
           </div>
         )}
