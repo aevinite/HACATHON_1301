@@ -358,7 +358,7 @@ export default function AdminHackathonsClient({ initialHackathons }: AdminHackat
             </div>
           </div>
         </div>
-        <div className="rounded-2xl p-5 bg-gradient-to-br from-cyan-600/20 to-cyan-500/5 border border-cyan-500/20">
+        <div className="rounded-2xl p-5 bg-gradient-to-br from-blue-600/20 to-blue-500/5 border border-blue-500/20">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-slate-400 text-sm mb-1">Active</p>
@@ -366,7 +366,7 @@ export default function AdminHackathonsClient({ initialHackathons }: AdminHackat
             </div>
           </div>
         </div>
-        <div className="rounded-2xl p-5 bg-gradient-to-br from-yellow-600/20 to-yellow-500/5 border border-yellow-500/20">
+        <div className="rounded-2xl p-5 bg-gradient-to-br from-blue-600/20 to-blue-500/5 border border-blue-500/20">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-slate-400 text-sm mb-1">Not Started</p>
@@ -374,7 +374,7 @@ export default function AdminHackathonsClient({ initialHackathons }: AdminHackat
             </div>
           </div>
         </div>
-        <div className="rounded-2xl p-5 bg-gradient-to-br from-emerald-600/20 to-emerald-500/5 border border-emerald-500/20">
+        <div className="rounded-2xl p-5 bg-gradient-to-br from-blue-600/20 to-blue-500/5 border border-blue-500/20">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-slate-400 text-sm mb-1">Completed</p>
