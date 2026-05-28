@@ -98,7 +98,7 @@ export default function AdminTeamsClient({ initialTeams, initialHackathonId, hac
             </div>
           </div>
         </div>
-        <div className="rounded-2xl p-5 bg-gradient-to-br from-cyan-600/20 to-cyan-500/5 border border-cyan-500/20">
+        <div className="rounded-2xl p-5 bg-gradient-to-br from-blue-600/20 to-blue-500/5 border border-blue-500/20">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-slate-400 text-sm mb-1">With Hackathon</p>
@@ -106,7 +106,7 @@ export default function AdminTeamsClient({ initialTeams, initialHackathonId, hac
             </div>
           </div>
         </div>
-        <div className="rounded-2xl p-5 bg-gradient-to-br from-purple-600/20 to-purple-500/5 border border-purple-500/20">
+        <div className="rounded-2xl p-5 bg-gradient-to-br from-blue-600/20 to-blue-500/5 border border-blue-500/20">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-slate-400 text-sm mb-1">Without Hackathon</p>
