@@ -54,14 +54,14 @@ export function JoinHackathonButton({ hackathonId, isParticipating, hackathon, t
     return (
       <div className="flex-1 w-full">
         {team ? (
-          <Button asChild variant="secondary" size="default" className="w-full overflow-hidden text-base py-2">
+          <Button asChild variant="secondary" size="default" className="w-full">
             <Link href={`/dashboard/teams/${team.id}?returnTo=/dashboard/hackathons/${hackathonId}&returnLabel=Back%20to%20Hackathon`} className="w-full">
               <Users className="mr-2 h-4 w-4" />
               Participating
             </Link>
           </Button>
         ) : (
-          <Button disabled variant="secondary" size="default" className="w-full overflow-hidden text-base py-2">
+          <Button disabled variant="secondary" size="default" className="w-full">
             <Users className="mr-2 h-4 w-4" />
             Participating
           </Button>
@@ -78,7 +78,7 @@ export function JoinHackathonButton({ hackathonId, isParticipating, hackathon, t
           disabled={!registrationOpen || isPending} 
           variant="default"
           size="default"
-          className="w-full overflow-hidden text-base py-2"
+          className="w-full"
         >
           {isPending ? "Joining..." : getButtonText()}
         </Button>
