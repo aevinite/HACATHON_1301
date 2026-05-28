@@ -240,7 +240,7 @@ export default async function HackathonDetailPage({
             <div className="glass rounded-2xl p-6 border border-white/5">
               <h2 className="text-xl font-bold text-white mb-4">Management Summary</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div className="rounded-xl p-4 bg-gradient-to-br from-violet-600/20 to-violet-500/5 border border-violet-500/20">
+                <div className="rounded-xl p-4 bg-gradient-to-br from-blue-600/20 to-blue-500/5 border border-blue-500/20">
                   <p className="text-slate-400 text-sm mb-1">Assigned Judges</p>
                   <p className="text-2xl font-bold text-white">{hackathonJudges.length}</p>
                 </div>
@@ -248,11 +248,11 @@ export default async function HackathonDetailPage({
                   <p className="text-slate-400 text-sm mb-1">Teams</p>
                   <p className="text-2xl font-bold text-white">{hackathon.team_count}</p>
                 </Link>
-                <Link href={`/dashboard/admin/projects?hackathonId=${hackathon.id}&returnTo=/dashboard/hackathons/${hackathon.id}&returnLabel=Back%20to%20Hackathon%20Detail`} className="rounded-xl p-4 bg-gradient-to-br from-cyan-600/20 to-cyan-500/5 border border-cyan-500/20 hover:border-cyan-500/40 transition-all">
+                <Link href={`/dashboard/admin/projects?hackathonId=${hackathon.id}&returnTo=/dashboard/hackathons/${hackathon.id}&returnLabel=Back%20to%20Hackathon%20Detail`} className="rounded-xl p-4 bg-gradient-to-br from-blue-600/20 to-blue-500/5 border border-blue-500/20 hover:border-blue-500/40 transition-all">
                   <p className="text-slate-400 text-sm mb-1">Projects</p>
                   <p className="text-2xl font-bold text-white">{hackathon.project_count}</p>
                 </Link>
-                <div className="rounded-xl p-4 bg-gradient-to-br from-amber-600/20 to-amber-500/5 border border-amber-500/20">
+                <div className="rounded-xl p-4 bg-gradient-to-br from-blue-600/20 to-blue-500/5 border border-blue-500/20">
                   <p className="text-slate-400 text-sm mb-1">Status</p>
                   <p className="text-lg font-bold text-white capitalize">{hackathon.status}</p>
                 </div>
