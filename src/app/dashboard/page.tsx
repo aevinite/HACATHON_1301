@@ -80,16 +80,14 @@ function AdminHackathonCard({ hackathon }: { hackathon: HackathonWithCounts }) {
         </div>
       </CardHeader>
       <CardContent className="pt-0 pb-3">
-        <div className="flex items-center gap-6 text-sm text-slate-400">
+        <div className="flex items-center gap-4 text-sm text-slate-400 mb-3">
           <div className="flex items-center gap-1.5">
-            <Calendar className="h-4 w-4" />
-            <span>{formatDate(hackathon.start_date)}</span>
+            <Users className="h-4 w-4" />
+            <span>{hackathon.team_count} teams</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <Trophy className="h-4 w-4" />
-            <span>
-              {hackathon.min_team_size}-{hackathon.max_team_size} members
-            </span>
+            <FileText className="h-4 w-4" />
+            <span>{hackathon.project_count} projects</span>
           </div>
         </div>
       </CardContent>
