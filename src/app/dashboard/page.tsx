@@ -14,7 +14,13 @@ import { ScoresRepository } from "@/data/repositories/scores-repository"
 import { ProfilesRepository } from "@/data/repositories/profiles-repository"
 import { JudgesRepository } from "@/data/repositories/judges-repository"
 import { formatDate } from "@/lib/format-date"
-import { getHackathonLifecycleStatus, getHackathonStatusLabel, getHackathonStatusBadgeClass } from "@/lib/format-hackathon-status"
+import { 
+  getHackathonLifecycleStatus, 
+  getHackathonStatusLabel, 
+  getHackathonStatusBadgeClass,
+  getHackathonGroupBucket,
+  getHackathonGroupLabel
+} from "@/lib/format-hackathon-status"
 import type { Database } from "@/types/supabase"
 
 type HackathonWithCounts = Database["public"]["Tables"]["hackathons"]["Row"] & {
@@ -141,13 +147,10 @@ export default async function DashboardPage() {
   const judges = await profilesRepo.findAllJudges()
   const allProfiles = await profilesRepo.findAll()
 
-  // Group hackathons by lifecycle status for admin
-  const registrationOpenHackathons = hackathons.filter(h => getHackathonLifecycleStatus(h) === "registration_open")
-  const registrationClosedHackathons = hackathons.filter(h => getHackathonLifecycleStatus(h) === "registration_closed")
-  const runningHackathons = hackathons.filter(h => getHackathonLifecycleStatus(h) === "running")
-  const judgingHackathons = hackathons.filter(h => getHackathonLifecycleStatus(h) === "judging")
-  const completedHackathons = hackathons.filter(h => getHackathonLifecycleStatus(h) === "completed")
-  const notStartedHackathons = hackathons.filter(h => getHackathonLifecycleStatus(h) === "not_started")
+  // Group hackathons the same way as the manage hackathons page
+  const currentActiveHackathons = hackathons.filter(h => getHackathonGroupBucket(h) === "current_active")
+  const upcomingNotStartedHackathons = hackathons.filter(h => getHackathonGroupBucket(h) === "upcoming_not_started")
+  const finishedCompletedHackathons = hackathons.filter(h => getHackathonGroupBucket(h) === "finished_completed")
 
   // Participant/Team Dashboard
   if (role === "team") {
@@ -533,30 +536,41 @@ export default async function DashboardPage() {
               </Button>
             </div>
 
-            <HackathonGroup
-              title="Registration Open"
-              hackathons={registrationOpenHackathons}
-            />
-            <HackathonGroup
-              title="Starting Soon"
-              hackathons={registrationClosedHackathons}
-            />
-            <HackathonGroup
-              title="Running"
-              hackathons={runningHackathons}
-            />
-            <HackathonGroup
-              title="Judging"
-              hackathons={judgingHackathons}
-            />
-            <HackathonGroup
-              title="Not Started"
-              hackathons={notStartedHackathons}
-            />
-            <HackathonGroup
-              title="Completed"
-              hackathons={completedHackathons}
-            />
+            {currentActiveHackathons.length > 0 && (
+              <div>
+                <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                  <span className="text-blue-400">●</span> {getHackathonGroupLabel("current_active")}
+                </h3>
+                <HackathonGroup
+                  title=""
+                  hackathons={currentActiveHackathons}
+                />
+              </div>
+            )}
+          
+            {upcomingNotStartedHackathons.length > 0 && (
+              <div>
+                <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                  <span className="text-green-400">●</span> {getHackathonGroupLabel("upcoming_not_started")}
+                </h3>
+                <HackathonGroup
+                  title=""
+                  hackathons={upcomingNotStartedHackathons}
+                />
+              </div>
+            )}
+          
+            {finishedCompletedHackathons.length > 0 && (
+              <div>
+                <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                  <span className="text-emerald-400">●</span> {getHackathonGroupLabel("finished_completed")}
+                </h3>
+                <HackathonGroup
+                  title=""
+                  hackathons={finishedCompletedHackathons}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
