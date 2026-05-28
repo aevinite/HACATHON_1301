@@ -78,7 +78,7 @@ export function JoinHackathonButton({ hackathonId, isParticipating, hackathon, t
           disabled={!registrationOpen || isPending} 
           variant="default"
           size="sm"
-          className="w-full"
+          className="w-full truncate"
         >
           {isPending ? "Joining..." : getButtonText()}
         </Button>
