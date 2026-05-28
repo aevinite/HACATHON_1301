@@ -568,38 +568,20 @@ export default function EditHackathonForm({
 
         {/* Assigned Judges */}
         <Card id="assigned-judges">
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="pb-2">
             <CardTitle className="text-base">Assigned Judges</CardTitle>
-            <Link href="/dashboard/admin/judges" passHref legacyBehavior>
-              <Button asChild variant="default" size="sm">
-                <a className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add Judge
-                </a>
-              </Button>
-            </Link>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Judge checkbox changes save only when you click Save Changes.
             </p>
-            {allJudges.filter(j => j.is_active).length === 0 ? (
-              <div className="text-center space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  No active judge profiles exist yet.
-                </p>
-                <Link href="/dashboard/admin/judges" passHref legacyBehavior>
-                  <Button asChild variant="default" size="sm">
-                    <a className="flex items-center gap-2">
-                      <Plus className="h-4 w-4" />
-                      Go to Manage Judges
-                    </a>
-                  </Button>
-                </Link>
-              </div>
+            {allJudges.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No judge profiles exist yet.
+              </p>
             ) : (
               <div className="space-y-3">
-                {allJudges.filter(j => j.is_active).map((judge) => {
+                {allJudges.map((judge) => {
                   const isSelected = selectedJudges.includes(judge.id)
                   return (
                     <div key={judge.id} className="flex items-center gap-3 p-3 border rounded-md bg-muted/30">
