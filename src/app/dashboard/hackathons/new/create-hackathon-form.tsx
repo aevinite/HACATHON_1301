@@ -389,6 +389,42 @@ export default function CreateHackathonForm() {
           </CardContent>
         </Card>
 
+        {/* Problem Statement */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Problem Statement</CardTitle>
+            <CardDescription>Upload the challenge problem statement PDF</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {problemFile ? (
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-6 w-6 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">{problemFile.name}</p>
+                    <p className="text-xs text-muted-foreground">{(problemFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                  </div>
+                </div>
+                <Button type="button" variant="destructive" size="sm" onClick={clearProblemFile}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="problem_file">Upload Problem Statement PDF</Label>
+                <Input
+                  id="problem_file"
+                  name="problem_file"
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handleProblemFileChange}
+                  className="border border-blue-500 focus-visible:ring-blue-500"
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Team Settings */}
         <Card>
           <CardHeader>
@@ -423,7 +459,7 @@ export default function CreateHackathonForm() {
         </Card>
 
         {/* Judging Criteria / Rubric */}
-        <Card className="mb-0">
+        <Card className="mb-20">
           <CardHeader>
             <CardTitle>Judging Criteria / Rubric</CardTitle>
           </CardHeader>
@@ -504,42 +540,6 @@ export default function CreateHackathonForm() {
                     </div>
                   </div>
                 ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Problem Statement */}
-        <Card className="mb-20">
-          <CardHeader>
-            <CardTitle>Problem Statement</CardTitle>
-            <CardDescription>Upload the challenge problem statement PDF</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {problemFile ? (
-              <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
-                <div className="flex items-center gap-3">
-                  <FileText className="h-6 w-6 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">{problemFile.name}</p>
-                    <p className="text-xs text-muted-foreground">{(problemFile.size / 1024 / 1024).toFixed(2)} MB</p>
-                  </div>
-                </div>
-                <Button type="button" variant="destructive" size="sm" onClick={clearProblemFile}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Label htmlFor="problem_file">Upload Problem Statement PDF</Label>
-                <Input
-                  id="problem_file"
-                  name="problem_file"
-                  type="file"
-                  accept="application/pdf"
-                  onChange={handleProblemFileChange}
-                  className="border border-blue-500 focus-visible:ring-blue-500"
-                />
               </div>
             )}
           </CardContent>
