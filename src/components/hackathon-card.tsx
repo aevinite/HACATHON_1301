@@ -74,7 +74,7 @@ export function HackathonCard({ hackathon, showCurrentIndicator = true, returnTo
               {hackathon.description}
             </CardDescription>
           </div>
-          <Badge className={getHackathonStatusBadgeClass(lifecycleStatus)} variant="secondary">
+          <Badge className={`${getHackathonStatusBadgeClass(lifecycleStatus)} text-sm px-3 py-1`} variant="outline">
             {getHackathonStatusLabel(lifecycleStatus)}
           </Badge>
         </div>

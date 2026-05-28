@@ -73,17 +73,17 @@ const getStatusLabel = (status: string) => {
 const getStatusBadgeClass = (status: string) => {
   switch (status) {
     case "draft":
-      return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20"
+      return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30 font-semibold text-sm px-3 py-1"
     case "registration":
-      return "bg-green-500/10 text-green-400 border-green-500/20"
+      return "bg-green-500/20 text-green-300 border-green-500/30 font-semibold text-sm px-3 py-1"
     case "submission":
-      return "bg-blue-500/10 text-blue-400 border-blue-500/20"
+      return "bg-blue-500/20 text-blue-300 border-blue-500/30 font-semibold text-sm px-3 py-1"
     case "judging":
-      return "bg-purple-500/10 text-purple-400 border-purple-500/20"
+      return "bg-purple-500/20 text-purple-300 border-purple-500/30 font-semibold text-sm px-3 py-1"
     case "completed":
-      return "bg-slate-500/10 text-slate-400 border-slate-500/20"
+      return "bg-slate-500/20 text-slate-300 border-slate-500/30 font-semibold text-sm px-3 py-1"
     default:
-      return "bg-white/5 text-slate-400 border-white/10"
+      return "bg-slate-500/20 text-slate-300 border-slate-500/30 font-semibold text-sm px-3 py-1"
   }
 }
 
