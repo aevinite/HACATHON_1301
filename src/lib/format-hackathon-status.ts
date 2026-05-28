@@ -27,7 +27,7 @@ export function isHackathonRegistrationOpen(hackathon: Hackathon): boolean {
     return false
   }
 
-  if (registrationStartDate && now < registrationStartDate) {
+  if (!registrationStartDate || now < registrationStartDate) {
     return false
   }
 
@@ -108,14 +108,15 @@ export function getHackathonLifecycleStatus(hackathon: Hackathon): HackathonLife
     }
   }
 
-  if (isHackathonRegistrationOpen(hackathon)) {
-    return "registration_open"
-  }
-
-  // Check if registration is closed but before start
-  if (registrationStartDate && registrationDeadline && startDate &&
-      now >= registrationStartDate && now >= registrationDeadline && now < startDate) {
-    return "registration_closed"
+  // Check if registration has started (now is after or equal to registration start date)
+  if (registrationStartDate && now >= registrationStartDate) {
+    // Check if registration is still open
+    if (registrationDeadline && now < registrationDeadline) {
+      return "registration_open"
+    } else {
+      // Registration has closed but hackathon not started yet
+      return "registration_closed"
+    }
   }
 
   return "not_started"
