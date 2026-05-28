@@ -92,6 +92,8 @@ export async function createHackathonAction(prevState: FormState, formData: Form
   if (!judgingDeadline) {
     fieldErrors.judging_deadline = "Judging deadline is required"
   }
+  // Validate files and other requirements
+  let formError: string | undefined
   // Validate max team size is between 1 and 4
   const maxTeamSizeNum = maxTeamSize ? parseInt(maxTeamSize) : 0
   if (isNaN(maxTeamSizeNum) || maxTeamSizeNum < 1 || maxTeamSizeNum > 4) {
@@ -118,9 +120,6 @@ export async function createHackathonAction(prevState: FormState, formData: Form
   if (dates.submissionEnd && dates.judgingEnd && dates.submissionEnd >= dates.judgingEnd) {
     fieldErrors.judging_deadline = "Judging ends must be after submissions close"
   }
-
-  // Validate files and other requirements
-  let formError: string | undefined
   if (!bannerFile || bannerFile.size === 0) {
     formError = "Banner image is required"
   }
