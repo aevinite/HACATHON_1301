@@ -1,5 +1,6 @@
 
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { LayoutDashboard, Trophy, Users, FileText, Search, Plus, Award, TrendingUp, Settings, Calendar, ArrowRight, UserRound, Gavel, Eye, Edit } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -123,6 +124,10 @@ export default async function DashboardPage() {
   const profile = await getCurrentProfile()
   const user = await getCurrentUser()
   const role = profile?.role || "team"
+
+  if (role === "team") {
+    redirect("/dashboard/hackathons")
+  }
   const projectsRepo = new ProjectsRepository()
   const projects = await projectsRepo.findAllWithDetails()
   const hackathonsRepo = new HackathonsRepository()

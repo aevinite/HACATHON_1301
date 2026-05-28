@@ -13,7 +13,6 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Participants", href: "/dashboard/participants", icon: Users },
   { label: "Judging", href: "/dashboard/judging", icon: Trophy },
   { label: "Submissions", href: "/dashboard/submissions", icon: FileText },

@@ -61,7 +61,7 @@ export async function loginAction(prevState: { error: string }, formData: FormDa
   if (role === "admin") {
     redirectUrl = "/dashboard"
   } else if (role === "team") {
-    redirectUrl = "/dashboard"
+    redirectUrl = "/dashboard/hackathons"
   } else if (role === "judge") {
     redirectUrl = "/dashboard"
   }

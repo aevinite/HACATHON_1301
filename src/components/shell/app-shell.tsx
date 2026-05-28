@@ -105,7 +105,6 @@ const getNavItems = (role: "admin" | "judge" | "team"): NavItem[] => {
   }
 
   return [
-    ...base,
     {
       id: "hackathons",
       title: "Hackathons",
