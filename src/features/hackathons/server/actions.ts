@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase-server"
 import { HackathonsRepository } from "@/data/repositories/hackathons-repository"
+import { RubricCriteriaRepository } from "@/data/repositories/rubric-criteria-repository"
 import { JudgesRepository } from "@/data/repositories/judges-repository"
 import { ProfilesRepository } from "@/data/repositories/profiles-repository"
 import { StorageService } from "@/storage/utils/storage-utils"
@@ -141,6 +142,7 @@ export async function createHackathonAction(prevState: FormState, formData: Form
   }
 
   const repository = new HackathonsRepository()
+  const rubricRepository = new RubricCriteriaRepository()
   const judgesRepo = new JudgesRepository()
   const profilesRepo = new ProfilesRepository()
   const payload = {
@@ -171,6 +173,26 @@ export async function createHackathonAction(prevState: FormState, formData: Form
   try {
     createdHackathon = await repository.create(payload)
     console.log("createHackathonAction: Repository create result:", createdHackathon)
+    
+    // Save rubric criteria
+    if (rubricCriteriaJson) {
+      try {
+        const rubricCriteria = JSON.parse(rubricCriteriaJson)
+        for (let i = 0; i < rubricCriteria.length; i++) {
+          const criterion = rubricCriteria[i]
+          await rubricRepository.create({
+            hackathon_id: createdHackathon.id,
+            name: criterion.name,
+            description: criterion.description || null,
+            max_score: parseInt(criterion.maxScore),
+            weight: 1,
+            sort_order: i
+          })
+        }
+      } catch (e) {
+        console.log("Error parsing rubric criteria:", e)
+      }
+    }
     
     // Save selected judges
     if (selectedJudgesJson) {
