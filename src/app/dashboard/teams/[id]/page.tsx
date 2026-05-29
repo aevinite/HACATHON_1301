@@ -75,6 +75,23 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
       </div>
 
       <div className="max-w-4xl mx-auto grid gap-6">
+        {/* Debug Box */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Debug Info</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xs overflow-auto max-h-48 bg-black/30 p-3 rounded">
+              <pre>{JSON.stringify({
+                leaderProfile,
+                members,
+                team,
+                leader_id: team.leader_id
+              }, null, 2)}</pre>
+            </div>
+          </CardContent>
+        </Card>
+        
         {/* Team Overview */}
         <Card>
           <CardHeader>
