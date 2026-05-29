@@ -1,13 +1,15 @@
 
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, ExternalLink, Users, Trophy, Calendar, GitBranch, Globe, FileText } from "lucide-react"
+import { ArrowLeft, ExternalLink, Users, Trophy, Calendar, GitBranch, Globe, FileText, Shield } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ProjectsRepository } from "@/data/repositories/projects-repository"
 import { TeamsRepository } from "@/data/repositories/teams-repository"
 import { HackathonsRepository } from "@/data/repositories/hackathons-repository"
+import { TeamMembersRepository } from "@/data/repositories/team-members-repository"
+import { ProfilesRepository } from "@/data/repositories/profiles-repository"
 
 export default async function ProjectDetailPage({ 
   params, 
@@ -19,6 +21,8 @@ export default async function ProjectDetailPage({
   const projectsRepo = new ProjectsRepository()
   const teamsRepo = new TeamsRepository()
   const hackathonsRepo = new HackathonsRepository()
+  const teamMembersRepo = new TeamMembersRepository()
+  const profilesRepo = new ProfilesRepository()
   const { id } = await params
   const resolvedSearchParams = await searchParams
 
@@ -29,6 +33,15 @@ export default async function ProjectDetailPage({
 
   const team = await teamsRepo.findById(project.team_id)
   const hackathon = await hackathonsRepo.findById(project.hackathon_id)
+  
+  // Fetch team members and leader profile
+  const members = team ? await teamMembersRepo.findByTeamId(team.id) : []
+  const leaderProfile = team?.leader_id ? await profilesRepo.findById(team.leader_id) : null
+  
+  const getInitials = (name: string | null | undefined): string => {
+    if (!name) return "U"
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+  }
 
   const formatDate = (date: string | null | undefined) => {
     if (!date) return "Not set"
@@ -131,6 +144,53 @@ export default async function ProjectDetailPage({
             </div>
           </CardContent>
         </Card>
+        
+        {/* Team Members */}
+        {team && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Team Members
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Leader */}
+              {leaderProfile && (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">{getInitials(leaderProfile.full_name)}</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-blue-300 font-medium text-sm">{leaderProfile.full_name || "Leader"}</p>
+                    <p className="text-xs text-muted-foreground">Team Leader</p>
+                  </div>
+                  <Badge className="text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                    <Shield className="mr-1 h-3 w-3" /> Leader
+                  </Badge>
+                </div>
+              )}
+              
+              {/* Other Members */}
+              {members.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  {members.map((member) => (
+                    <div key={member.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
+                      <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">{getInitials(member.profiles?.full_name)}</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{member.profiles?.full_name || "Member"}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">No additional team members yet.</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Links */}
         <Card>
