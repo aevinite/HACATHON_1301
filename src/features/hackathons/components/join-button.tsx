@@ -152,97 +152,99 @@ export function JoinHackathonButton({ hackathonId, isParticipating, hackathon, t
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[550px] max-h-[85vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-2">
             <DialogTitle>Join Hackathon</DialogTitle>
             <DialogDescription>
               Create your team to join the hackathon. You can invite more members later.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="team-name" className="text-right">
-                  Team Name
-                </Label>
-                <Input
-                  id="team-name"
-                  value={teamName}
-                  onChange={(e) => setTeamName(e.target.value)}
-                  className="col-span-3"
-                  placeholder="Enter your team name"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="member-count" className="text-right">
-                  Team Size
-                </Label>
-                <Select value={memberCount} onValueChange={setMemberCount}>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select team size" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(() => {
-                      const minSize = hackathon.min_team_size || 1
-                      const maxSize = hackathon.max_team_size || 5
-                      const options = []
-                      for (let i = minSize; i <= maxSize; i++) {
-                        options.push(
-                          <SelectItem key={i} value={i.toString()}>
-                            {i} {i === 1 ? 'Member' : 'Members'}
-                          </SelectItem>
-                        )
-                      }
-                      return options
-                    })()}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Member Email Fields */}
-              {memberInputs.length > 0 && (
-                <div className="col-span-4 mt-4 pt-4 border-t border-slate-700">
-                  <h4 className="font-semibold mb-3 text-white">Team Members</h4>
-                  <div className="space-y-3">
-                    {memberInputs.map((member, index) => (
-                      <div key={member.id} className="grid grid-cols-4 items-center gap-4">
-                        <Label className="text-right text-sm">
-                          Member {index + 1}
-                        </Label>
-                        <Input
-                          type="email"
-                          value={member.email}
-                          onChange={(e) => updateMemberEmail(index, e.target.value)}
-                          className="col-span-3"
-                          placeholder="Enter email"
-                        />
-                      </div>
-                    ))}
-                  </div>
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              <div className="grid gap-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="team-name" className="text-right">
+                    Team Name
+                  </Label>
+                  <Input
+                    id="team-name"
+                    value={teamName}
+                    onChange={(e) => setTeamName(e.target.value)}
+                    className="col-span-3"
+                    placeholder="Enter your team name"
+                  />
                 </div>
-              )}
-              
-              {/* Hackathon Details */}
-              <div className="col-span-4 mt-4 pt-4 border-t border-slate-700">
-                <h4 className="font-semibold mb-2 text-white">Hackathon Details</h4>
-                <div className="text-sm text-slate-400 space-y-1">
-                  {hackathon.registration_start_date && (
-                    <p>Registration Opens: {new Date(hackathon.registration_start_date).toLocaleDateString()}</p>
-                  )}
-                  {hackathon.registration_deadline && (
-                    <p>Registration Closes: {new Date(hackathon.registration_deadline).toLocaleDateString()}</p>
-                  )}
-                  {hackathon.start_date && (
-                    <p>Hackathon Starts: {new Date(hackathon.start_date).toLocaleDateString()}</p>
-                  )}
-                  {hackathon.submission_deadline && (
-                    <p>Submission Deadline: {new Date(hackathon.submission_deadline).toLocaleDateString()}</p>
-                  )}
-                  <p>Team Size Range: {hackathon.min_team_size} - {hackathon.max_team_size} members</p>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="member-count" className="text-right">
+                    Team Size
+                  </Label>
+                  <Select value={memberCount} onValueChange={setMemberCount}>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select team size" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(() => {
+                        const minSize = hackathon.min_team_size || 1
+                        const maxSize = hackathon.max_team_size || 5
+                        const options = []
+                        for (let i = minSize; i <= maxSize; i++) {
+                          options.push(
+                            <SelectItem key={i} value={i.toString()}>
+                              {i} {i === 1 ? 'Member' : 'Members'}
+                            </SelectItem>
+                          )
+                        }
+                        return options
+                      })()}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Member Email Fields */}
+                {memberInputs.length > 0 && (
+                  <div className="col-span-4 mt-4 pt-4 border-t border-slate-700">
+                    <h4 className="font-semibold mb-3 text-white">Team Members</h4>
+                    <div className="space-y-3">
+                      {memberInputs.map((member, index) => (
+                        <div key={member.id} className="grid grid-cols-4 items-center gap-4">
+                          <Label className="text-right text-sm">
+                            Member {index + 1}
+                          </Label>
+                          <Input
+                            type="email"
+                            value={member.email}
+                            onChange={(e) => updateMemberEmail(index, e.target.value)}
+                            className="col-span-3"
+                            placeholder="Enter email"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Hackathon Details */}
+                <div className="col-span-4 mt-4 pt-4 border-t border-slate-700">
+                  <h4 className="font-semibold mb-2 text-white">Hackathon Details</h4>
+                  <div className="text-sm text-slate-400 space-y-1">
+                    {hackathon.registration_start_date && (
+                      <p>Registration Opens: {new Date(hackathon.registration_start_date).toLocaleDateString()}</p>
+                    )}
+                    {hackathon.registration_deadline && (
+                      <p>Registration Closes: {new Date(hackathon.registration_deadline).toLocaleDateString()}</p>
+                    )}
+                    {hackathon.start_date && (
+                      <p>Hackathon Starts: {new Date(hackathon.start_date).toLocaleDateString()}</p>
+                    )}
+                    {hackathon.submission_deadline && (
+                      <p>Submission Deadline: {new Date(hackathon.submission_deadline).toLocaleDateString()}</p>
+                    )}
+                    <p>Team Size Range: {hackathon.min_team_size} - {hackathon.max_team_size} members</p>
+                  </div>
                 </div>
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="p-6 pt-2 border-t border-slate-700">
               <Button type="button" variant="secondary" onClick={() => setIsOpen(false)} disabled={isPending}>
                 Cancel
               </Button>
