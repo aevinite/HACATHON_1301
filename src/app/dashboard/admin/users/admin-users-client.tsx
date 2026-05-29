@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Users, AlertTriangle, CheckCircle2 } from "lucide-react"
-import { updateUserRoleAction } from "@/features/auth/server/admin-actions"
+import { updateUserRoleAction, deleteUserAction } from "@/features/auth/server/admin-actions"
 import { AdminPageHeader } from "@/components/admin/admin-page-header"
 
 type Profile = {
@@ -106,6 +106,83 @@ function UpdateRoleForm({ profileId, currentRole }: { profileId: string; current
         </div>
       )}
     </div>
+  )
+}
+
+function DeleteUserForm({ profileId }: { profileId: string }) {
+  const [state, formAction, isPending] = useActionState(deleteUserAction, { success: undefined, error: undefined })
+  const [confirmText, setConfirmText] = useState("")
+  const [isConfirming, setIsConfirming] = useState(false)
+
+  function handleDelete(e: React.FormEvent) {
+    e.preventDefault()
+    if (confirmText.toLowerCase() !== "delete") {
+      return
+    }
+    const form = e.target as HTMLFormElement
+    formAction(new FormData(form))
+  }
+
+  if (state.success) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-green-400">
+        <CheckCircle2 className="h-4 w-4" />
+        User deleted successfully
+      </div>
+    )
+  }
+
+  if (isConfirming) {
+    return (
+      <div className="flex flex-col gap-3">
+        <p className="text-sm text-amber-400">
+          Type <strong>DELETE</strong> to confirm
+        </p>
+        <form onSubmit={handleDelete} className="flex flex-col gap-3">
+          <input type="hidden" name="userId" value={profileId} />
+          <Input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="Type DELETE..."
+            disabled={isPending}
+          />
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsConfirming(false)}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              type="submit"
+              disabled={confirmText.toLowerCase() !== "delete" || isPending}
+            >
+              {isPending ? "Deleting..." : "Confirm Delete"}
+            </Button>
+          </div>
+        </form>
+        {state.error && (
+          <div className="flex items-center gap-2 text-sm text-red-400">
+            <AlertTriangle className="h-4 w-4" />
+            {state.error}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <Button
+      variant="destructive"
+      size="sm"
+      onClick={() => setIsConfirming(true)}
+    >
+      Delete User
+    </Button>
   )
 }
 
@@ -246,17 +323,7 @@ export default function AdminUsersClient({ initialProfiles }: AdminUsersClientPr
                 </div>
                 <div className="flex flex-col items-end gap-3">
                   <UpdateRoleForm profileId={profile.id} currentRole={profile.role} />
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    disabled
-                    className="opacity-60 cursor-not-allowed"
-                  >
-                    Delete User (Coming Soon)
-                  </Button>
-                  <p className="text-xs text-slate-500">
-                    User deletion is disabled until safe auth deletion and data-retention rules are implemented.
-                  </p>
+                  <DeleteUserForm profileId={profile.id} />
                 </div>
               </div>
             </div>

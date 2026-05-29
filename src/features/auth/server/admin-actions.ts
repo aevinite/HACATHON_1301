@@ -53,3 +53,42 @@ export async function updateUserRoleAction(prevState: { success?: boolean; error
   }
 }
 
+export async function deleteUserAction(prevState: { success?: boolean; error?: string }, formData: FormData): Promise<{ success?: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    redirect("/login")
+  }
+  
+  const profilesRepo = new ProfilesRepository()
+  const currentUserProfile = await profilesRepo.findByUserId(user.id)
+  
+  if (!currentUserProfile || currentUserProfile.role !== "admin") {
+    redirect("/dashboard")
+  }
+  
+  const userId = formData.get("userId") as string
+  
+  if (!userId) {
+    return { error: "User ID is required" }
+  }
+  
+  // Prevent admin from deleting themselves
+  if (userId === user.id) {
+    return { error: "You cannot delete your own account" }
+  }
+  
+  try {
+    const deleted = await profilesRepo.delete(userId)
+    if (!deleted) {
+      return { error: "Failed to delete user" }
+    }
+    revalidatePath("/dashboard/admin/users")
+    revalidatePath("/dashboard")
+    return { success: true }
+  } catch {
+    return { error: "Failed to delete user" }
+  }
+}
+
