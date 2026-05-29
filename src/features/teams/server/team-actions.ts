@@ -86,12 +86,21 @@ export async function addTeamMemberAction(prevState: TeamActionState, formData: 
   }
 
   try {
-    await supabase
+    const { error: insertError } = await supabase
       .from("team_members")
       .insert({
         team_id: teamId,
         user_id: foundUserId,
       })
+      .select()
+
+    if (insertError) {
+      console.error("Insert error:", insertError)
+      if (insertError.code === '23505') { // Unique violation
+        return { error: "This user is already a member of the team" }
+      }
+      return { error: "Failed to add team member" }
+    }
 
     revalidatePath(`/dashboard/teams/${teamId}`)
     revalidatePath("/dashboard/teams")
@@ -134,11 +143,16 @@ export async function removeTeamMemberAction(prevState: TeamActionState, formDat
   }
 
   try {
-    await supabase
+    const { error: deleteError } = await supabase
       .from("team_members")
       .delete()
       .eq("team_id", teamId)
       .eq("user_id", memberId)
+
+    if (deleteError) {
+      console.error("Delete error:", deleteError)
+      return { error: "Failed to remove team member" }
+    }
 
     revalidatePath(`/dashboard/teams/${teamId}`)
     revalidatePath("/dashboard/teams")
