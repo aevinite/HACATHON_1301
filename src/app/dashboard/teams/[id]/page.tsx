@@ -150,7 +150,7 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
                 <span className="text-white text-xs font-bold">{getInitials(leaderProfile?.full_name)}</span>
               </div>
               <div>
-                <p className="text-blue-300 font-medium text-sm">{leaderProfile?.full_name || "Leader"}</p>
+                <p className="text-blue-300 font-medium text-sm">{leaderProfile?.full_name || "Team Leader"}</p>
                 <p className="text-xs text-muted-foreground">Team Leader</p>
               </div>
               <Badge className="ml-auto text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20">
@@ -158,20 +158,23 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
               </Badge>
             </div>
             {members.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic">
-                No additional members yet.
-              </p>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground italic">No additional members yet.</p>
+                <div className="p-2 border border-yellow-500/30 bg-yellow-500/10 rounded text-xs text-yellow-300">
+                  <p>💡 Leader Profile Note: Check your profiles table!</p>
+                </div>
+              </div>
             ) : (
               <div className="flex flex-col gap-2">
                 {members.map((member) => (
                   <div key={member.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
                     <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">{getInitials(member.profiles?.full_name)}</span>
+                      <span className="text-white text-xs font-bold">{getInitials(member.profiles?.full_name)}</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{member.profiles?.full_name || "Member"}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium">{member.profiles?.full_name || "Member"}</p>
-                  </div>
-                </div>
                 ))}
               </div>
             )}
