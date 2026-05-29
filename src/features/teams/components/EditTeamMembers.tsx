@@ -34,6 +34,8 @@ export function EditTeamMembers({ team, members, leaderProfile, isLeader }: Edit
   const [newMemberEmail, setNewMemberEmail] = useState("")
   const [addState, addAction, addPending] = useActionState(addTeamMemberAction, { success: undefined, error: undefined })
   const [removeState, removeAction, removePending] = useActionState(removeTeamMemberAction, { success: undefined, error: undefined })
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [isRemoveSuccess, setIsRemoveSuccess] = useState(false)
 
   const handleAddMember = (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,6 +44,11 @@ export function EditTeamMembers({ team, members, leaderProfile, isLeader }: Edit
     formData.set("team_id", team.id)
     formData.set("member_email", newMemberEmail)
     addAction(formData)
+    setIsSuccess(true)
+    setTimeout(() => {
+      setIsSuccess(false)
+      setIsOpen(false)
+    }, 1500)
     setNewMemberEmail("")
   }
 
@@ -50,6 +57,10 @@ export function EditTeamMembers({ team, members, leaderProfile, isLeader }: Edit
     formData.set("team_id", team.id)
     formData.set("member_id", userId)
     removeAction(formData)
+    setIsRemoveSuccess(true)
+    setTimeout(() => {
+      setIsRemoveSuccess(false)
+    }, 1500)
   }
 
   return (

@@ -94,6 +94,8 @@ export async function addTeamMemberAction(prevState: TeamActionState, formData: 
       })
 
     revalidatePath(`/dashboard/teams/${teamId}`)
+    revalidatePath("/dashboard/teams")
+    revalidatePath("/dashboard", "layout")
     return { success: true }
   } catch (error) {
     console.error("Failed to add member:", error)
@@ -139,6 +141,8 @@ export async function removeTeamMemberAction(prevState: TeamActionState, formDat
       .eq("user_id", memberId)
 
     revalidatePath(`/dashboard/teams/${teamId}`)
+    revalidatePath("/dashboard/teams")
+    revalidatePath("/dashboard", "layout")
     return { success: true }
   } catch (error) {
     console.error("Failed to remove member:", error)
