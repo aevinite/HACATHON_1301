@@ -80,7 +80,7 @@ export async function deleteUserAction(prevState: { success?: boolean; error?: s
   }
   
   try {
-    const deleted = await profilesRepo.delete(userId)
+    const deleted = await profilesRepo.deleteWithAuth(userId)
     if (!deleted) {
       return { error: "Failed to delete user" }
     }

@@ -83,5 +83,34 @@ export class ProfilesRepository extends BaseRepository<Profile> {
 
     return (data as Profile[]) || []
   }
+
+  async deleteWithAuth(userId: string): Promise<boolean> {
+    // First delete the profile
+    const profileDeleted = await this.delete(userId)
+    if (!profileDeleted) {
+      return false
+    }
+
+    // Now delete the auth user using service role key
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    
+    try {
+      const response = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}`, {
+        method: "DELETE",
+        headers: {
+          "apikey": serviceRoleKey,
+          "Authorization": `Bearer ${serviceRoleKey}`,
+          "Content-Type": "application/json",
+        },
+      })
+      
+      return response.ok
+    } catch (error) {
+      console.error("Error deleting auth user:", error)
+      // If auth deletion fails, we still count it as success since profile is already gone
+      return true
+    }
+  }
 }
 
