@@ -13,6 +13,7 @@ import { ProjectsRepository } from "@/data/repositories/projects-repository"
 import { ProfilesRepository } from "@/data/repositories/profiles-repository"
 import { createClient } from "@/lib/supabase-server"
 import { isProjectSubmissionAllowed, getSubmissionStatusText } from "@/lib/format-hackathon-status"
+import { EditTeamMembers } from "@/features/teams/components/EditTeamMembers"
 
 export default async function TeamDetailPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const teamsRepo = new TeamsRepository()
@@ -21,6 +22,7 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
   const projectsRepo = new ProjectsRepository()
   const profilesRepo = new ProfilesRepository()
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   const { id } = await params
   const resolvedSearchParams = await searchParams
 
@@ -34,6 +36,12 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
   console.log("=== TEAM MEMBERS:", members)
   const project = await projectsRepo.findByTeamId(id)
   const leaderProfile = team.leader_id ? await profilesRepo.findById(team.leader_id) : null
+  
+  // Check if current user is leader or admin
+  const currentUserProfile = user ? await profilesRepo.findByUserId(user.id) : null
+  const isLeader = !!user && user.id === team.leader_id
+  const isAdmin = !!currentUserProfile && currentUserProfile.role === "admin"
+  const canEdit = isLeader || isAdmin
 
   const getSafeReturnTo = (returnTo: string | string[] | undefined): string => {
     if (typeof returnTo !== "string") return ""
@@ -107,11 +115,17 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
 
         {/* Members */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center">
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
               Members
             </CardTitle>
+            <EditTeamMembers 
+              team={team} 
+              members={members} 
+              leaderProfile={leaderProfile} 
+              isLeader={canEdit} 
+            />
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
