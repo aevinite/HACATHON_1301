@@ -60,5 +60,15 @@ export async function GET() {
     results.scores = { success: false, error: e.message }
   }
 
+  // Test team members table
+  try {
+    const { data, error } = await supabase
+      .from("team_members")
+      .select("*, profiles(*)")
+    results.team_members = { success: !error, data, error: error?.message || null }
+  } catch (e: any) {
+    results.team_members = { success: false, error: e.message }
+  }
+
   return NextResponse.json(results)
 }
