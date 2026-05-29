@@ -65,5 +65,23 @@ export class ProfilesRepository extends BaseRepository<Profile> {
 
     return profile
   }
+
+  async searchByEmail(query: string, excludeUserId?: string): Promise<Profile[]> {
+    const supabase = await this.getClient()
+    let dbQuery = supabase
+      .from("profiles")
+      .select("*")
+      .ilike("email", `%${query}%`)
+
+    if (excludeUserId) {
+      dbQuery = dbQuery.neq("id", excludeUserId)
+    }
+
+    const { data } = await dbQuery
+      .limit(10)
+      .order("created_at", { ascending: false })
+
+    return (data as Profile[]) || []
+  }
 }
 

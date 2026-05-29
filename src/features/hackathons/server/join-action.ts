@@ -23,7 +23,6 @@ export async function joinHackathonAction(prevState: JoinActionState, formData: 
 
   const hackathonId = formData.get("hackathon_id") as string
   const teamName = formData.get("team_name") as string
-  const memberCount = formData.get("member_count") as string
   
   if (!hackathonId) {
     return { error: "Hackathon ID is required" }
@@ -46,7 +45,7 @@ export async function joinHackathonAction(prevState: JoinActionState, formData: 
     // Check if user already has a team for this hackathon
     const existingTeam = await teamsRepo.findByHackathonAndUserId(hackathonId, user.id)
     if (existingTeam) {
-      revalidatePath(`/dashboard/hackathons/${hackathonId}`)
+      revalidatePath(`/dashboard/hackathons/${hackathonId}")
       return { teamId: existingTeam.id, hackathonId, isNewTeam: false }
     }
 
@@ -65,7 +64,44 @@ export async function joinHackathonAction(prevState: JoinActionState, formData: 
       user.id
     )
 
-    revalidatePath(`/dashboard/hackathons/${hackathonId}`)
+    // Add additional team members
+    const supabaseClient = await createClient()
+    const memberCount = parseInt(formData.get("member_count") as string || "1")
+    
+    for (let i = 0; i < memberCount - 1; i++) { // minus 1 for current user
+      const memberId = formData.get(`member_id_${i}") as string
+      const memberEmail = formData.get(`member_email_${i}") as string
+      
+      if (memberId) {
+        // If we have a member ID (user is registered)
+        await supabaseClient
+          .from("team_members")
+          .insert({
+            team_id: createdTeam.id,
+            user_id: memberId,
+          })
+          .then()
+          .catch(error => console.error("Error adding team member:", error))
+      } else if (memberEmail) {
+        // If we only have an email, try to find the profile by email
+        const { data: existingProfiles } = await supabaseClient
+          .from("profiles")
+          .select("*")
+          .eq("email", memberEmail)
+          .limit(1)
+        
+        if (existingProfiles && existingProfiles.length > 0) {
+          await supabaseClient
+            .from("team_members")
+            .insert({
+              team_id: createdTeam.id,
+              user_id: existingProfiles[0].id,
+            })
+        }
+      }
+    }
+
+    revalidatePath(`/dashboard/hackathons/${hackathonId}")
     return { teamId: createdTeam.id, hackathonId, isNewTeam: true }
   } catch (error) {
     console.error("Failed to join hackathon:", error)
