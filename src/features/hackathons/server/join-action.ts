@@ -72,44 +72,53 @@ export async function joinHackathonAction(prevState: JoinActionState, formData: 
     )
 
     // Add additional team members
+    console.log("=== ADDING TEAM MEMBERS ===")
     const supabaseClient = await createClient()
     const memberCountStr = formData.get("member_count") as string
     const memberCount = memberCountStr ? parseInt(memberCountStr) : 1
+    console.log("Member count from form:", memberCount)
     
     for (let i = 0; i < memberCount - 1; i++) { // minus 1 for current user
       const memberIdKey = "member_id_" + i
       const memberEmailKey = "member_email_" + i
       const memberId = formData.get(memberIdKey) as string
       const memberEmail = formData.get(memberEmailKey) as string
+      console.log(`Member ${i}:`, { memberIdKey, memberId, memberEmailKey, memberEmail })
       
       if (memberId) {
         // If we have a member ID (user is registered)
         try {
+          console.log(`Adding member ${i} with user_id:`, memberId)
           await supabaseClient
             .from("team_members")
             .insert({
               team_id: createdTeam.id,
               user_id: memberId,
             })
+          console.log(`Successfully added member ${i}`)
         } catch (error) {
           console.error("Error adding team member:", error)
         }
-      } else if (memberEmail) {
+      } else if (memberEmail && memberEmail.trim() !== "") {
         // If we only have an email, try to find the profile by email
+        console.log(`Looking up profile by email:`, memberEmail)
         const { data: existingProfiles } = await supabaseClient
           .from("profiles")
           .select("*")
-          .eq("email", memberEmail)
+          .eq("email", memberEmail.trim())
           .limit(1)
         
+        console.log("Found profiles:", existingProfiles)
         if (existingProfiles && existingProfiles.length > 0) {
           try {
+            console.log(`Adding member ${i} with user_id:`, existingProfiles[0].id)
             await supabaseClient
               .from("team_members")
               .insert({
                 team_id: createdTeam.id,
                 user_id: existingProfiles[0].id,
               })
+            console.log(`Successfully added member ${i}`)
           } catch (error) {
             console.error("Error adding team member:", error)
           }

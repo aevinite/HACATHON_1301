@@ -31,6 +31,7 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
 
   const hackathon = await hackathonsRepo.findById(team.hackathon_id)
   const members = await teamMembersRepo.findByTeamId(id)
+  console.log("=== TEAM MEMBERS:", members)
   const project = await projectsRepo.findByTeamId(id)
   const leaderProfile = team.leader_id ? await profilesRepo.findById(team.leader_id) : null
 

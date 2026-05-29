@@ -123,11 +123,10 @@ export function JoinHackathonButton({ hackathonId, isParticipating, hackathon, t
     formData.set("team_name", teamName)
     formData.set("member_count", memberCount)
     
-    // Add member emails
+    // Add member emails - add all even if empty
     memberInputs.forEach((member, index) => {
-      if (member.email) {
-        formData.set(`member_email_${index}`, member.email)
-      }
+      console.log(`Adding member_email_${index}:`, member.email)
+      formData.set(`member_email_${index}`, member.email)
     })
     
     // @ts-ignore - useActionState expects a FormData input for the function
