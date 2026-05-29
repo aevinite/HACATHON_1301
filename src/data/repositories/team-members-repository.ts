@@ -16,12 +16,18 @@ export class TeamMembersRepository extends BaseRepository<TeamMember> {
   }
 
   async findByTeamId(teamId: string): Promise<TeamMemberWithProfile[]> {
+    console.log("========== TeamMembersRepository.findByTeamId ==========")
+    console.log("Looking for team members with team_id:", teamId)
     const supabase = await this.getClient()
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("team_members")
       .select("*, profiles(*)")
       .eq("team_id", teamId)
       .order("created_at", { ascending: true })
+
+    console.log("Query result - data:", JSON.stringify(data, null, 2))
+    console.log("Query result - error:", error)
+    console.log("========================================================")
 
     return data || []
   }
