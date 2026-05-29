@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useActionState, useEffect } from "react"
@@ -13,17 +12,22 @@ import { useRouter } from "next/navigation"
 
 type Team = Database["public"]["Tables"]["teams"]["Row"]
 type Profile = Database["public"]["Tables"]["profiles"]["Row"]
+type TeamMember = Database["public"]["Tables"]["team_members"]["Row"]
+
+type TeamMemberWithProfile = TeamMember & {
+  profiles?: Profile | null
+}
 
 interface EditTeamMembersProps {
   team: Team
-  members: any[]
+  members: TeamMemberWithProfile[]
   leaderProfile: Profile | null
   isLeader: boolean
 }
 
 function getInitials(name: string | null | undefined): string {
   if (!name) return "U"
-  return name.split(' ').map(n =&gt; n[0]).join('').toUpperCase().slice(0, 2)
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
 export function EditTeamMembers({ team, members, leaderProfile, isLeader }: EditTeamMembersProps) {
@@ -33,26 +37,29 @@ export function EditTeamMembers({ team, members, leaderProfile, isLeader }: Edit
   const [removeState, removeAction, removePending] = useActionState(removeTeamMemberAction, { success: undefined, error: undefined })
   const router = useRouter()
 
-  useEffect(() =&gt; {
+  // Reset success/error states when dialog opens
+  useEffect(() => {
     if (isOpen) {
       setNewMemberEmail("")
     }
   }, [isOpen])
 
-  useEffect(() =&gt; {
+  // Handle successful add - refresh the page or dialog
+  useEffect(() => {
     if (addState.success) {
       setNewMemberEmail("")
       router.refresh()
     }
   }, [addState.success, router])
 
-  useEffect(() =&gt; {
+  // Handle successful remove - refresh the page or dialog
+  useEffect(() => {
     if (removeState.success) {
       router.refresh()
     }
   }, [removeState.success, router])
 
-  const handleAddMember = (e: React.FormEvent) =&gt; {
+  const handleAddMember = (e: React.FormEvent) => {
     e.preventDefault()
     if (!newMemberEmail.trim()) return
     const formData = new FormData()
@@ -61,7 +68,7 @@ export function EditTeamMembers({ team, members, leaderProfile, isLeader }: Edit
     addAction(formData)
   }
 
-  const handleRemoveMember = (userId: string) =&gt; {
+  const handleRemoveMember = (userId: string) => {
     const formData = new FormData()
     formData.set("team_id", team.id)
     formData.set("member_id", userId)
@@ -69,104 +76,108 @@ export function EditTeamMembers({ team, members, leaderProfile, isLeader }: Edit
   }
 
   return (
-    &lt;&gt;
-      {isLeader &amp;&amp; (
-        &lt;Button 
+    <>
+      {isLeader && (
+        <Button 
           variant="default" 
           size="sm" 
           className="ml-auto"
-          onClick={() =&gt; setIsOpen(true)}
-        &gt;
-          &lt;UserPlus className="mr-2 h-4 w-4" /&gt;
+          onClick={() => setIsOpen(true)}
+        >
+          <UserPlus className="mr-2 h-4 w-4" />
           Edit Members
-        &lt;/Button&gt;
+        </Button>
       )}
 
-      &lt;Dialog open={isOpen} onOpenChange={setIsOpen}&gt;
-        &lt;DialogContent className="sm:max-w-[550px]"&gt;
-          &lt;DialogHeader&gt;
-            &lt;DialogTitle&gt;Edit Team Members&lt;/DialogTitle&gt;
-            &lt;DialogDescription&gt;
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="sm:max-w-[550px]">
+          <DialogHeader>
+            <DialogTitle>Edit Team Members</DialogTitle>
+            <DialogDescription>
               Add or remove members from your team.
-            &lt;/DialogDescription&gt;
-          &lt;/DialogHeader&gt;
+            </DialogDescription>
+          </DialogHeader>
           
-          &lt;div className="space-y-4"&gt;
-            &lt;h4 className="font-semibold text-white"&gt;Add Member&lt;/h4&gt;
-            &lt;form onSubmit={handleAddMember} className="flex gap-3"&gt;
-              &lt;div className="flex-1"&gt;
-                &lt;Input 
+          {/* Add New Member */}
+          <div className="space-y-4">
+            <h4 className="font-semibold text-white">Add Member</h4>
+            <form onSubmit={handleAddMember} className="flex gap-3">
+              <div className="flex-1">
+                <Input 
                   type="email" 
                   value={newMemberEmail} 
-                  onChange={(e) =&gt; setNewMemberEmail(e.target.value)} 
+                  onChange={(e) => setNewMemberEmail(e.target.value)} 
                   placeholder="Enter member email"
                   disabled={addPending}
-                /&gt;
-              &lt;/div&gt;
-              &lt;Button type="submit" disabled={addPending || !newMemberEmail.trim()}&gt;
+                />
+              </div>
+              <Button type="submit" disabled={addPending || !newMemberEmail.trim()}>
                 {addPending ? "Adding..." : "Add"}
-              &lt;/Button&gt;
-            &lt;/form&gt;
-            {addState.success &amp;&amp; (
-              &lt;p className="text-sm text-green-400"&gt;Member added successfully!&lt;/p&gt;
+              </Button>
+            </form>
+            {addState.success && (
+              <p className="text-sm text-green-400">Member added successfully!</p>
             )}
-            {addState.error &amp;&amp; (
-              &lt;p className="text-sm text-red-400"&gt;{addState.error}&lt;/p&gt;
+            {addState.error && (
+              <p className="text-sm text-red-400">{addState.error}</p>
             )}
-          &lt;/div&gt;
+          </div>
 
-          &lt;div className="space-y-3 mt-4"&gt;
-            &lt;h4 className="font-semibold text-white"&gt;Current Members&lt;/h4&gt;
+          {/* Current Members */}
+          <div className="space-y-3 mt-4">
+            <h4 className="font-semibold text-white">Current Members</h4>
             
-            &lt;div className="flex items-center gap-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20"&gt;
-              &lt;div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center"&gt;
-                &lt;span className="text-white text-xs font-bold"&gt;{getInitials(leaderProfile?.full_name)}&lt;/span&gt;
-              &lt;/div&gt;
-              &lt;div className="flex-1"&gt;
-                &lt;p className="text-blue-300 font-medium text-sm"&gt;{leaderProfile?.full_name || "Leader"}&lt;/p&gt;
-                &lt;p className="text-xs text-muted-foreground"&gt;Team Leader&lt;/p&gt;
-              &lt;/div&gt;
-              &lt;Badge className="text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20"&gt;
+            {/* Leader */}
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
+              <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
+                <span className="text-white text-xs font-bold">{getInitials(leaderProfile?.full_name)}</span>
+              </div>
+              <div className="flex-1">
+                <p className="text-blue-300 font-medium text-sm">{leaderProfile?.full_name || "Leader"}</p>
+                <p className="text-xs text-muted-foreground">Team Leader</p>
+              </div>
+              <Badge className="text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20">
                 Leader
-              &lt;/Badge&gt;
-            &lt;/div&gt;
+              </Badge>
+            </div>
 
-            {members.map((member: any) =&gt; (
-              &lt;div key={member.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5"&gt;
-                &lt;div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center"&gt;
-                  &lt;span className="text-white text-xs font-bold"&gt;{getInitials(member.profiles?.full_name)}&lt;/span&gt;
-                &lt;/div&gt;
-                &lt;div className="flex-1"&gt;
-                  &lt;p className="text-sm font-medium"&gt;{member.profiles?.full_name || "Member"}&lt;/p&gt;
-                &lt;/div&gt;
-                {isLeader &amp;&amp; (
-                  &lt;Button 
+            {/* Other Members */}
+            {members.map((member) => (
+              <div key={member.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
+                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">{getInitials(member.profiles?.full_name)}</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{member.profiles?.full_name || "Member"}</p>
+                </div>
+                {isLeader && (
+                  <Button 
                     variant="destructive" 
                     size="sm"
-                    onClick={() =&gt; handleRemoveMember(member.user_id)}
+                    onClick={() => handleRemoveMember(member.user_id)}
                     disabled={removePending}
-                  &gt;
-                    &lt;Trash2 className="h-4 w-4" /&gt;
-                  &lt;/Button&gt;
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 )}
-              &lt;/div&gt;
+              </div>
             ))}
-          &lt;/div&gt;
+          </div>
 
-          {removeState.success &amp;&amp; (
-            &lt;p className="text-sm text-green-400"&gt;Member removed successfully!&lt;/p&gt;
+          {removeState.success && (
+            <p className="text-sm text-green-400">Member removed successfully!</p>
           )}
-          {removeState.error &amp;&amp; (
-            &lt;p className="text-sm text-red-400"&gt;{removeState.error}&lt;/p&gt;
+          {removeState.error && (
+            <p className="text-sm text-red-400">{removeState.error}</p>
           )}
 
-          &lt;DialogFooter&gt;
-            &lt;Button type="button" variant="secondary" onClick={() =&gt; setIsOpen(false)}&gt;
+          <DialogFooter>
+            <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>
               Close
-            &lt;/Button&gt;
-          &lt;/DialogFooter&gt;
-        &lt;/DialogContent&gt;
-      &lt;/Dialog&gt;
-    &lt;/&gt;
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
