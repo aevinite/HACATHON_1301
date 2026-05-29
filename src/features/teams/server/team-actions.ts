@@ -41,21 +41,56 @@ export async function addTeamMemberAction(prevState: TeamActionState, formData: 
     }
   }
 
+  // Get all profiles first and find the matching user
   const profilesRepo = new ProfilesRepository()
-  const members = await profilesRepo.searchByEmail(memberEmail)
-
-  if (!members || members.length === 0) {
+  const allProfiles = await profilesRepo.findAll()
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+  
+  let foundUserId = null
+  
+  try {
+    // Use service role to list all users and find by email
+    const response = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
+      method: "GET",
+      headers: {
+        "apikey": serviceRoleKey,
+        "Authorization": `Bearer ${serviceRoleKey}`,
+        "Content-Type": "application/json",
+      },
+    })
+    
+    if (response.ok) {
+      const usersData = await response.json()
+      const authUsers = usersData.users || []
+      
+      // Find the user by email
+      const matchingAuthUser = authUsers.find((u: any) => 
+        u.email && u.email.toLowerCase() === memberEmail.toLowerCase()
+      )
+      
+      if (matchingAuthUser) {
+        // Now check if there's a profile for this user
+        const matchingProfile = allProfiles.find(p => p.id === matchingAuthUser.id)
+        if (matchingProfile) {
+          foundUserId = matchingProfile.id
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Failed to fetch auth users:", error)
+  }
+  
+  if (!foundUserId) {
     return { error: "No user found with that email" }
   }
-
-  const newMember = members[0]
 
   try {
     await supabase
       .from("team_members")
       .insert({
         team_id: teamId,
-        user_id: newMember.id,
+        user_id: foundUserId,
       })
 
     revalidatePath(`/dashboard/teams/${teamId}`)

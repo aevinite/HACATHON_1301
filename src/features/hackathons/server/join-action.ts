@@ -78,6 +78,31 @@ export async function joinHackathonAction(prevState: JoinActionState, formData: 
     const memberCount = memberCountStr ? parseInt(memberCountStr) : 1
     console.log("Member count from form:", memberCount)
     
+    // Get all profiles and auth users first
+    const allProfiles = await profilesRepo.findAll()
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    
+    // Fetch all auth users
+    let allAuthUsers: any[] = []
+    try {
+      const response = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
+        method: "GET",
+        headers: {
+          "apikey": serviceRoleKey,
+          "Authorization": `Bearer ${serviceRoleKey}`,
+          "Content-Type": "application/json",
+        },
+      })
+      
+      if (response.ok) {
+        const usersData = await response.json()
+        allAuthUsers = usersData.users || []
+      }
+    } catch (error) {
+      console.error("Failed to fetch auth users:", error)
+    }
+    
     for (let i = 0; i < memberCount - 1; i++) { // minus 1 for current user
       const memberIdKey = "member_id_" + i
       const memberEmailKey = "member_email_" + i
@@ -85,43 +110,41 @@ export async function joinHackathonAction(prevState: JoinActionState, formData: 
       const memberEmail = formData.get(memberEmailKey) as string
       console.log(`Member ${i}:`, { memberIdKey, memberId, memberEmailKey, memberEmail })
       
+      let userIdToAdd = null
+      
       if (memberId) {
+        userIdToAdd = memberId
+      } else if (memberEmail && memberEmail.trim() !== "") {
+        // If we only have an email, try to find the profile by email
+        console.log(`Looking up profile by email:`, memberEmail)
+        
+        // Find the auth user first
+        const matchingAuthUser = allAuthUsers.find((u: any) => 
+          u.email && u.email.toLowerCase() === memberEmail.toLowerCase()
+        )
+        
+        if (matchingAuthUser) {
+          // Now check if there's a profile for this user
+          const matchingProfile = allProfiles.find(p => p.id === matchingAuthUser.id)
+          if (matchingProfile) {
+            userIdToAdd = matchingProfile.id
+          }
+        }
+      }
+      
+      if (userIdToAdd) {
         // If we have a member ID (user is registered)
         try {
-          console.log(`Adding member ${i} with user_id:`, memberId)
+          console.log(`Adding member ${i} with user_id:`, userIdToAdd)
           await supabaseClient
             .from("team_members")
             .insert({
               team_id: createdTeam.id,
-              user_id: memberId,
+              user_id: userIdToAdd,
             })
           console.log(`Successfully added member ${i}`)
         } catch (error) {
           console.error("Error adding team member:", error)
-        }
-      } else if (memberEmail && memberEmail.trim() !== "") {
-        // If we only have an email, try to find the profile by email
-        console.log(`Looking up profile by email:`, memberEmail)
-        const { data: existingProfiles } = await supabaseClient
-          .from("profiles")
-          .select("*")
-          .eq("email", memberEmail.trim())
-          .limit(1)
-        
-        console.log("Found profiles:", existingProfiles)
-        if (existingProfiles && existingProfiles.length > 0) {
-          try {
-            console.log(`Adding member ${i} with user_id:`, existingProfiles[0].id)
-            await supabaseClient
-              .from("team_members")
-              .insert({
-                team_id: createdTeam.id,
-                user_id: existingProfiles[0].id,
-              })
-            console.log(`Successfully added member ${i}`)
-          } catch (error) {
-            console.error("Error adding team member:", error)
-          }
         }
       }
     }
