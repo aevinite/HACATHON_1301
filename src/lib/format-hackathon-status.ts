@@ -181,19 +181,19 @@ export function getHackathonGroupLabel(bucket: HackathonGroupBucket): string {
 export function getHackathonStatusBadgeClass(status: HackathonLifecycleStatus | string): string {
   switch (status) {
     case "registration_open":
-      return "bg-green-500/20 text-green-300 border-green-500/30 font-semibold"
+      return "bg-green-500/20 text-green-300 border-green-500/30 font-semibold text-sm px-3 py-1"
     case "registration_closed":
-      return "bg-amber-500/20 text-amber-300 border-amber-500/30 font-semibold"
+      return "bg-amber-500/20 text-amber-300 border-amber-500/30 font-semibold text-sm px-3 py-1"
     case "not_started":
-      return "bg-slate-500/20 text-slate-300 border-slate-500/30 font-semibold"
+      return "bg-slate-500/20 text-slate-300 border-slate-500/30 font-semibold text-sm px-3 py-1"
     case "running":
-      return "bg-blue-500/20 text-blue-300 border-blue-500/30 font-semibold"
+      return "bg-blue-500/20 text-blue-300 border-blue-500/30 font-semibold text-sm px-3 py-1"
     case "judging":
-      return "bg-purple-500/20 text-purple-300 border-purple-500/30 font-semibold"
+      return "bg-purple-500/20 text-purple-300 border-purple-500/30 font-semibold text-sm px-3 py-1"
     case "completed":
-      return "bg-emerald-500/20 text-emerald-300 border-emerald-500/30 font-semibold"
+      return "bg-emerald-500/20 text-emerald-300 border-emerald-500/30 font-semibold text-sm px-3 py-1"
     default:
-      return "bg-slate-500/20 text-slate-300 border-slate-500/30 font-semibold"
+      return "bg-slate-500/20 text-slate-300 border-slate-500/30 font-semibold text-sm px-3 py-1"
   }
 }
 
