@@ -75,23 +75,6 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
       </div>
 
       <div className="max-w-4xl mx-auto grid gap-6">
-        {/* Debug Box */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Debug Info</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xs overflow-auto max-h-48 bg-black/30 p-3 rounded">
-              <pre>{JSON.stringify({
-                leaderProfile,
-                members,
-                team,
-                leader_id: team.leader_id
-              }, null, 2)}</pre>
-            </div>
-          </CardContent>
-        </Card>
-        
         {/* Team Overview */}
         <Card>
           <CardHeader>
@@ -158,12 +141,9 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
               </Badge>
             </div>
             {members.length === 0 ? (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground italic">No additional members yet.</p>
-                <div className="p-2 border border-yellow-500/30 bg-yellow-500/10 rounded text-xs text-yellow-300">
-                  <p>💡 Leader Profile Note: Check your profiles table!</p>
-                </div>
-              </div>
+              <p className="text-sm text-muted-foreground italic">
+                No additional members yet.
+              </p>
             ) : (
               <div className="flex flex-col gap-2">
                 {members.map((member) => (
