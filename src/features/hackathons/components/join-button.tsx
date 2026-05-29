@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useActionState, useEffect } from "react"
+import { useActionState, useEffect, useState } from "react"
 import { Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { joinHackathonAction } from "@/features/hackathons/server/join-action"
@@ -9,6 +9,10 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import type { Database } from "@/types/supabase"
 import { isHackathonRegistrationOpen } from "@/lib/format-hackathon-status"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 type Hackathon = Database["public"]["Tables"]["hackathons"]["Row"]
 type Team = Database["public"]["Tables"]["teams"]["Row"]
@@ -20,12 +24,22 @@ interface JoinHackathonButtonProps {
   team?: Team | null
 }
 
+interface JoinActionState {
+  error?: string
+  teamId?: string
+  hackathonId?: string
+  isNewTeam?: boolean
+}
+
 export function JoinHackathonButton({ hackathonId, isParticipating, hackathon, team }: JoinHackathonButtonProps) {
-  const [state, formAction, isPending] = useActionState(joinHackathonAction, { error: undefined, teamId: undefined, hackathonId: undefined, isNewTeam: undefined })
+  const [state, formAction, isPending] = useActionState<JoinActionState, FormData>(joinHackathonAction, { error: undefined, teamId: undefined, hackathonId: undefined, isNewTeam: undefined })
   const router = useRouter()
   const registrationOpen = isHackathonRegistrationOpen(hackathon)
   const now = new Date()
   const hackathonStarted = hackathon.start_date ? now >= new Date(hackathon.start_date) : false
+  const [isOpen, setIsOpen] = useState(false)
+  const [teamName, setTeamName] = useState("")
+  const [memberCount, setMemberCount] = useState("1")
 
   useEffect(() => {
     if (state.teamId && state.hackathonId) {
@@ -74,19 +88,117 @@ export function JoinHackathonButton({ hackathonId, isParticipating, hackathon, t
     return null
   }
 
+  const handleJoinClick = () => {
+    // Set default team name
+    setTeamName("My Team")
+    // Set default member count to min team size or 1
+    const defaultCount = hackathon.min_team_size || 1
+    setMemberCount(defaultCount.toString())
+    setIsOpen(true)
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsOpen(false)
+    // Create a FormData object and trigger the action
+    const formData = new FormData()
+    formData.set("hackathon_id", hackathonId)
+    formData.set("team_name", teamName)
+    formData.set("member_count", memberCount)
+    // @ts-ignore - useActionState expects a FormData input for the function
+    formAction(formData)
+  }
+
   return (
     <div className="flex-1 w-full">
-      <form action={formAction} className="w-full">
-        <input type="hidden" name="hackathon_id" value={hackathonId} />
-        <Button 
-          disabled={isPending} 
-          variant="default"
-          size="default"
-          className="w-full"
-        >
-          {isPending ? "Joining..." : "Join Hackathon"}
-        </Button>
-      </form>
+      <Button 
+        onClick={handleJoinClick}
+        variant="default"
+        size="default"
+        className="w-full"
+      >
+        Join Hackathon
+      </Button>
+
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Join Hackathon</DialogTitle>
+            <DialogDescription>
+              Create your team to join the hackathon. You can invite more members later.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="team-name" className="text-right">
+                  Team Name
+                </Label>
+                <Input
+                  id="team-name"
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  className="col-span-3"
+                  placeholder="Enter your team name"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="member-count" className="text-right">
+                  Team Size
+                </Label>
+                <Select value={memberCount} onValueChange={setMemberCount}>
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select team size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(() => {
+                      const minSize = hackathon.min_team_size || 1
+                      const maxSize = hackathon.max_team_size || 5
+                      const options = []
+                      for (let i = minSize; i <= maxSize; i++) {
+                        options.push(
+                          <SelectItem key={i} value={i.toString()}>
+                            {i} {i === 1 ? 'Member' : 'Members'}
+                          </SelectItem>
+                        )
+                      }
+                      return options
+                    })()}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Hackathon Details */}
+              <div className="col-span-4 mt-4 pt-4 border-t border-slate-700">
+                <h4 className="font-semibold mb-2 text-white">Hackathon Details</h4>
+                <div className="text-sm text-slate-400 space-y-1">
+                  {hackathon.registration_start_date && (
+                    <p>Registration Opens: {new Date(hackathon.registration_start_date).toLocaleDateString()}</p>
+                  )}
+                  {hackathon.registration_deadline && (
+                    <p>Registration Closes: {new Date(hackathon.registration_deadline).toLocaleDateString()}</p>
+                  )}
+                  {hackathon.start_date && (
+                    <p>Hackathon Starts: {new Date(hackathon.start_date).toLocaleDateString()}</p>
+                  )}
+                  {hackathon.submission_deadline && (
+                    <p>Submission Deadline: {new Date(hackathon.submission_deadline).toLocaleDateString()}</p>
+                  )}
+                  <p>Team Size Range: {hackathon.min_team_size} - {hackathon.max_team_size} members</p>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="secondary" onClick={() => setIsOpen(false)} disabled={isPending}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? "Joining..." : "Create Team & Join"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

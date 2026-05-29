@@ -22,6 +22,9 @@ export async function joinHackathonAction(prevState: JoinActionState, formData: 
   }
 
   const hackathonId = formData.get("hackathon_id") as string
+  const teamName = formData.get("team_name") as string
+  const memberCount = formData.get("member_count") as string
+  
   if (!hackathonId) {
     return { error: "Hackathon ID is required" }
   }
@@ -47,14 +50,14 @@ export async function joinHackathonAction(prevState: JoinActionState, formData: 
       return { teamId: existingTeam.id, hackathonId, isNewTeam: false }
     }
 
-    // Get user's profile for team name
+    // Get user's profile for default team name if none provided
     const userProfile = await profilesRepo.findByUserId(user.id)
-    const defaultTeamName = userProfile?.full_name ? `${userProfile.full_name}'s Team` : `Team ${user.id.slice(0, 8)}`
+    const finalTeamName = teamName || (userProfile?.full_name ? `${userProfile.full_name}'s Team` : `Team ${user.id.slice(0, 8)}`)
 
     // Create a new team for the user
     const createdTeam = await teamsRepo.createWithMember(
       {
-        name: defaultTeamName,
+        name: finalTeamName,
         hackathon_id: hackathonId,
         leader_id: user.id,
         is_active: true,
