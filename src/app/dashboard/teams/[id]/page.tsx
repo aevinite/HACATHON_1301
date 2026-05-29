@@ -33,9 +33,7 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
 
   const hackathon = await hackathonsRepo.findById(team.hackathon_id)
   const members = await teamMembersRepo.findByTeamId(id)
-  console.log("========== TEAM MEMBERS DEBUG INFO ==========")
-  console.log("Members count:", members.length)
-  console.log("Full members data:", JSON.stringify(members, null, 2))
+  console.log("=== TEAM MEMBERS:", members)
   const project = await projectsRepo.findByTeamId(id)
   const leaderProfile = team.leader_id ? await profilesRepo.findById(team.leader_id) : null
   
@@ -66,7 +64,7 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
   const backHref = returnTo || "/dashboard/teams"
 
   return (
-    <div key={`team-page-${members.length}`} className="p-6 md:p-8">
+    <div className="p-6 md:p-8">
       <div className="flex items-center gap-4 mb-8">
         <Button variant="ghost" size="sm" asChild>
           <Link href={backHref}>
@@ -142,15 +140,6 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
                 <Shield className="mr-1 h-3 w-3" /> Leader
               </Badge>
             </div>
-            
-            {/* Debug info */}
-            <div className="p-3 bg-white/5 rounded-xl border border-white/5">
-              <p className="text-xs text-muted-foreground">DEBUG: Members count - {members.length}</p>
-              <pre className="text-xs text-slate-400 mt-2 overflow-auto max-h-60">
-                {JSON.stringify(members, null, 2)}
-              </pre>
-            </div>
-
             {members.length === 0 ? (
               <p className="text-sm text-muted-foreground italic">
                 No additional members yet.
@@ -160,12 +149,12 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
                 {members.map((member) => (
                   <div key={member.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
                     <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">{getInitials(member.profiles?.full_name)}</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">{member.profiles?.full_name || "Member"}</p>
-                    </div>
+                    <span className="text-white text-xs font-bold">{getInitials(member.profiles?.full_name)}</span>
                   </div>
+                  <div>
+                    <p className="text-sm font-medium">{member.profiles?.full_name || "Member"}</p>
+                  </div>
+                </div>
                 ))}
               </div>
             )}
