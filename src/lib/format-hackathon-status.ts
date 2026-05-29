@@ -27,7 +27,15 @@ export function isHackathonRegistrationOpen(hackathon: Hackathon): boolean {
     return false
   }
 
-  if (!registrationStartDate || now < registrationStartDate) {
+  if (!registrationStartDate) {
+    return false
+  }
+  
+  // Handle timezone issues by comparing date-only parts as well
+  const regStartDateOnly = new Date(registrationStartDate.getFullYear(), registrationStartDate.getMonth(), registrationStartDate.getDate());
+  const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  if (!(todayDateOnly >= regStartDateOnly || now >= registrationStartDate)) {
     return false
   }
 
