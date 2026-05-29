@@ -11,10 +11,7 @@ type TeamActionState = {
   error?: string
 }
 
-export async function addTeamMemberAction(
-  prevState: TeamActionState, 
-  formData: FormData
-): Promise&lt;TeamActionState&gt; {
+export async function addTeamMemberAction(prevState: TeamActionState, formData: FormData): Promise<TeamActionState> {
   const supabase = await createClient()
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   
@@ -44,6 +41,7 @@ export async function addTeamMemberAction(
     }
   }
 
+  // Get all profiles first and find the matching user
   const profilesRepo = new ProfilesRepository()
   const allProfiles = await profilesRepo.findAll()
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -52,6 +50,7 @@ export async function addTeamMemberAction(
   let foundUserId = null
   
   try {
+    // Use service role to list all users and find by email
     const response = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
       method: "GET",
       headers: {
@@ -65,12 +64,14 @@ export async function addTeamMemberAction(
       const usersData = await response.json()
       const authUsers = usersData.users || []
       
-      const matchingAuthUser = authUsers.find((u: any) =&gt; 
-        u.email &amp;&amp; u.email.toLowerCase() === memberEmail.toLowerCase()
+      // Find the user by email
+      const matchingAuthUser = authUsers.find((u: any) => 
+        u.email && u.email.toLowerCase() === memberEmail.toLowerCase()
       )
       
       if (matchingAuthUser) {
-        const matchingProfile = allProfiles.find(p =&gt; p.id === matchingAuthUser.id)
+        // Now check if there's a profile for this user
+        const matchingProfile = allProfiles.find(p => p.id === matchingAuthUser.id)
         if (matchingProfile) {
           foundUserId = matchingProfile.id
         }
@@ -85,16 +86,17 @@ export async function addTeamMemberAction(
   }
 
   try {
-    const { data: insertData, error: insertError } = await supabase
+    const { error: insertError } = await supabase
       .from("team_members")
       .insert({
         team_id: teamId,
         user_id: foundUserId,
       })
       .select()
-    
+
     if (insertError) {
-      if (insertError.code === '23505') {
+      console.error("Insert error:", insertError)
+      if (insertError.code === '23505') { // Unique violation
         return { error: "This user is already a member of the team" }
       }
       return { error: "Failed to add team member" }
@@ -110,10 +112,7 @@ export async function addTeamMemberAction(
   }
 }
 
-export async function removeTeamMemberAction(
-  prevState: TeamActionState, 
-  formData: FormData
-): Promise&lt;TeamActionState&gt; {
+export async function removeTeamMemberAction(prevState: TeamActionState, formData: FormData): Promise<TeamActionState> {
   const supabase = await createClient()
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   
