@@ -2,24 +2,21 @@
 "use client"
 
 import { useState, useActionState, useEffect } from "react"
-import { Users, Plus, X, Trash2, UserPlus } from "lucide-react"
+import { Trash2, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { addTeamMemberAction, removeTeamMemberAction } from "@/features/teams/server/team-actions"
 import type { Database } from "@/types/supabase"
+import { useRouter } from "next/navigation"
 
 type Team = Database["public"]["Tables"]["teams"]["Row"]
-type TeamMemberWithProfile = Database["public"]["Tables"]["team_members"]["Row"] &amp; {
-  profiles?: any
-}
 type Profile = Database["public"]["Tables"]["profiles"]["Row"]
 
 interface EditTeamMembersProps {
   team: Team
-  members: TeamMemberWithProfile[]
+  members: any[]
   leaderProfile: Profile | null
   isLeader: boolean
 }
@@ -34,20 +31,26 @@ export function EditTeamMembers({ team, members, leaderProfile, isLeader }: Edit
   const [newMemberEmail, setNewMemberEmail] = useState("")
   const [addState, addAction, addPending] = useActionState(addTeamMemberAction, { success: undefined, error: undefined })
   const [removeState, removeAction, removePending] = useActionState(removeTeamMemberAction, { success: undefined, error: undefined })
+  const router = useRouter()
 
-  // Reset success/error states when dialog opens
   useEffect(() =&gt; {
     if (isOpen) {
       setNewMemberEmail("")
     }
   }, [isOpen])
 
-  // Handle successful add - don't close dialog immediately, keep it open so user can see updated list
   useEffect(() =&gt; {
     if (addState.success) {
       setNewMemberEmail("")
+      router.refresh()
     }
-  }, [addState.success])
+  }, [addState.success, router])
+
+  useEffect(() =&gt; {
+    if (removeState.success) {
+      router.refresh()
+    }
+  }, [removeState.success, router])
 
   const handleAddMember = (e: React.FormEvent) =&gt; {
     e.preventDefault()
@@ -88,7 +91,6 @@ export function EditTeamMembers({ team, members, leaderProfile, isLeader }: Edit
             &lt;/DialogDescription&gt;
           &lt;/DialogHeader&gt;
           
-          {/* Add New Member */}
           &lt;div className="space-y-4"&gt;
             &lt;h4 className="font-semibold text-white"&gt;Add Member&lt;/h4&gt;
             &lt;form onSubmit={handleAddMember} className="flex gap-3"&gt;
@@ -113,11 +115,9 @@ export function EditTeamMembers({ team, members, leaderProfile, isLeader }: Edit
             )}
           &lt;/div&gt;
 
-          {/* Current Members */}
           &lt;div className="space-y-3 mt-4"&gt;
             &lt;h4 className="font-semibold text-white"&gt;Current Members&lt;/h4&gt;
             
-            {/* Leader */}
             &lt;div className="flex items-center gap-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20"&gt;
               &lt;div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center"&gt;
                 &lt;span className="text-white text-xs font-bold"&gt;{getInitials(leaderProfile?.full_name)}&lt;/span&gt;
@@ -131,8 +131,7 @@ export function EditTeamMembers({ team, members, leaderProfile, isLeader }: Edit
               &lt;/Badge&gt;
             &lt;/div&gt;
 
-            {/* Other Members */}
-            {members.map((member) =&gt; (
+            {members.map((member: any) =&gt; (
               &lt;div key={member.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5"&gt;
                 &lt;div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center"&gt;
                   &lt;span className="text-white text-xs font-bold"&gt;{getInitials(member.profiles?.full_name)}&lt;/span&gt;
