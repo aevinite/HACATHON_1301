@@ -64,7 +64,7 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
   const backHref = returnTo || "/dashboard/teams"
 
   return (
-    <div className="p-6 md:p-8">
+    <div key={`team-page-${members.length}`} className="p-6 md:p-8">
       <div className="flex items-center gap-4 mb-8">
         <Button variant="ghost" size="sm" asChild>
           <Link href={backHref}>

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { addTeamMemberAction, removeTeamMemberAction } from "@/features/teams/server/team-actions"
 import type { Database } from "@/types/supabase"
+import { useRouter } from "next/navigation"
 
 type Team = Database["public"]["Tables"]["teams"]["Row"]
 type Profile = Database["public"]["Tables"]["profiles"]["Row"]
@@ -34,6 +35,7 @@ export function EditTeamMembers({ team, members, leaderProfile, isLeader }: Edit
   const [newMemberEmail, setNewMemberEmail] = useState("")
   const [addState, addAction, addPending] = useActionState(addTeamMemberAction, { success: undefined, error: undefined })
   const [removeState, removeAction, removePending] = useActionState(removeTeamMemberAction, { success: undefined, error: undefined })
+  const router = useRouter()
 
   // Reset success/error states when dialog opens
   useEffect(() => {
@@ -42,12 +44,20 @@ export function EditTeamMembers({ team, members, leaderProfile, isLeader }: Edit
     }
   }, [isOpen])
 
-  // Handle successful add - don't close dialog immediately, keep it open so user can see updated list
+  // Handle successful add - refresh the page or dialog
   useEffect(() => {
     if (addState.success) {
       setNewMemberEmail("")
+      router.refresh()
     }
-  }, [addState.success])
+  }, [addState.success, router])
+
+  // Handle successful remove - refresh the page or dialog
+  useEffect(() => {
+    if (removeState.success) {
+      router.refresh()
+    }
+  }, [removeState.success, router])
 
   const handleAddMember = (e: React.FormEvent) => {
     e.preventDefault()
