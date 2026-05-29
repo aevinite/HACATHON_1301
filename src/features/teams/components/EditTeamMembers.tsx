@@ -11,12 +11,9 @@ import type { Database } from "@/types/supabase"
 
 type Team = Database["public"]["Tables"]["teams"]["Row"]
 type Profile = Database["public"]["Tables"]["profiles"]["Row"]
+type TeamMember = Database["public"]["Tables"]["team_members"]["Row"]
 
-interface TeamMemberWithProfile {
-  id: string
-  team_id: string
-  user_id: string
-  created_at: string
+type TeamMemberWithProfile = TeamMember & {
   profiles?: Profile | null
 }
 
