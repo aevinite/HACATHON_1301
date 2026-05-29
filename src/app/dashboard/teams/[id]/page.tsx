@@ -10,6 +10,7 @@ import { TeamsRepository } from "@/data/repositories/teams-repository"
 import { TeamMembersRepository } from "@/data/repositories/team-members-repository"
 import { HackathonsRepository } from "@/data/repositories/hackathons-repository"
 import { ProjectsRepository } from "@/data/repositories/projects-repository"
+import { ProfilesRepository } from "@/data/repositories/profiles-repository"
 import { createClient } from "@/lib/supabase-server"
 import { isProjectSubmissionAllowed, getSubmissionStatusText } from "@/lib/format-hackathon-status"
 
@@ -18,6 +19,7 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
   const teamMembersRepo = new TeamMembersRepository()
   const hackathonsRepo = new HackathonsRepository()
   const projectsRepo = new ProjectsRepository()
+  const profilesRepo = new ProfilesRepository()
   const supabase = await createClient()
   const { id } = await params
   const resolvedSearchParams = await searchParams
@@ -30,6 +32,7 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
   const hackathon = await hackathonsRepo.findById(team.hackathon_id)
   const members = await teamMembersRepo.findByTeamId(id)
   const project = await projectsRepo.findByTeamId(id)
+  const leaderProfile = team.leader_id ? await profilesRepo.findById(team.leader_id) : null
 
   const getSafeReturnTo = (returnTo: string | string[] | undefined): string => {
     if (typeof returnTo !== "string") return ""
@@ -40,6 +43,11 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
   const getSafeReturnLabel = (returnLabel: string | string[] | undefined): string => {
     if (typeof returnLabel !== "string") return "Back to Teams"
     return returnLabel
+  }
+
+  const getInitials = (name: string | null | undefined): string => {
+    if (!name) return "U"
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
   }
 
   const returnTo = getSafeReturnTo(resolvedSearchParams.returnTo)
@@ -107,10 +115,10 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
               <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
-                <span className="text-white text-xs font-bold">L</span>
+                <span className="text-white text-xs font-bold">{getInitials(leaderProfile?.full_name)}</span>
               </div>
               <div>
-                <p className="text-blue-300 font-medium text-sm">Leader</p>
+                <p className="text-blue-300 font-medium text-sm">{leaderProfile?.full_name || "Leader"}</p>
                 <p className="text-xs text-muted-foreground">Team Leader</p>
               </div>
               <Badge className="ml-auto text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20">
@@ -126,13 +134,10 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
                 {members.map((member) => (
                   <div key={member.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
                     <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">M</span>
+                    <span className="text-white text-xs font-bold">{getInitials(member.profiles?.full_name)}</span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium">{member.role || "Member"}</p>
-                    {member.role && (
-                      <p className="text-xs text-muted-foreground italic">{member.role}</p>
-                    )}
+                    <p className="text-sm font-medium">{member.profiles?.full_name || "Member"}</p>
                   </div>
                 </div>
                 ))}
