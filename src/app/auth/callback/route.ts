@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
             id: user.id,
             full_name: fullName,
             email: user.email,
-            avatar_url: user.user_metadata?.avatar_url || null,
+            avatar_url: null,
             role: "team",
             is_active: true,
           })
