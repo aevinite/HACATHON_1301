@@ -20,33 +20,38 @@ export async function GET(request: Request) {
       return NextResponse.json([])
     }
 
-    const profilesRepo = new ProfilesRepository()
-    const profiles = await profilesRepo.searchByEmail(query, user.id)
-
-    // Now fetch emails from auth.users for these profiles
+    // First, fetch ALL auth users (to get emails)
     const serviceSupabase = createServiceRoleClient()
     const { data: authUsers } = await serviceSupabase.auth.admin.listUsers()
 
-    // Map auth users by id
+    // Create a map of auth users by id
     const authUsersMap = new Map()
     authUsers.users.forEach(authUser => {
       authUsersMap.set(authUser.id, authUser)
     })
 
-    // Add email to each profile
-    const profilesWithEmails = profiles.map(profile => ({
-      ...profile,
-      email: authUsersMap.get(profile.id)?.email || null
-    }))
+    // Now fetch all team-role profiles (excluding current user)
+    const profilesRepo = new ProfilesRepository()
+    const profiles = await profilesRepo.searchByEmail(query, user.id)
 
-    // Now filter profiles that match the query in name OR email
-    const filtered = profilesWithEmails.filter(profile => {
-      const nameMatch = profile.full_name?.toLowerCase().includes(query.toLowerCase())
-      const emailMatch = profile.email?.toLowerCase().includes(query.toLowerCase())
-      return nameMatch || emailMatch
-    })
+    // For each profile, add the email, then filter by query
+    const results = profiles
+      .map(profile => {
+        const authUser = authUsersMap.get(profile.id)
+        return {
+          ...profile,
+          email: authUser?.email || null
+        }
+      })
+      .filter(profile => {
+        // Check if name OR email matches the query
+        const nameMatch = profile.full_name?.toLowerCase().includes(query.toLowerCase())
+        const emailMatch = profile.email?.toLowerCase().includes(query.toLowerCase())
+        return nameMatch || emailMatch
+      })
+      .slice(0, 10) // Limit to 10 results
 
-    return NextResponse.json(filtered)
+    return NextResponse.json(results)
   } catch (error) {
     console.error("Error searching profiles:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

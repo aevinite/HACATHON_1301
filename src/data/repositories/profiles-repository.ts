@@ -112,14 +112,14 @@ export class ProfilesRepository extends BaseRepository<Profile> {
     let dbQuery = supabase
       .from("profiles")
       .select("*")
-      .ilike("email", `%${query}%`)
+      .eq("role", "team")
 
     if (excludeUserId) {
       dbQuery = dbQuery.neq("id", excludeUserId)
     }
 
     const { data } = await dbQuery
-      .limit(10)
+      .limit(50)
       .order("created_at", { ascending: false })
 
     return (data as Profile[]) || []
