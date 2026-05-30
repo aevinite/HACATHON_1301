@@ -42,7 +42,8 @@ export async function GET(request: NextRequest) {
           await supabase.from("profiles").insert({
             id: user.id,
             full_name: fullName,
-            avatar_url: null,
+            email: user.email,
+            avatar_url: user.user_metadata?.avatar_url || null,
             role: "team",
             is_active: true,
           })
