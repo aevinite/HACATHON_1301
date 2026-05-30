@@ -35,6 +35,9 @@ export async function GET(request: Request) {
     const authUsers = authUsersData.users
     console.log("search-profiles: Total auth users:", authUsers.length)
 
+    // Log all auth users emails to see what's there
+    console.log("search-profiles: All auth user emails:", authUsers.map(u => u.email))
+
     // 2. Get ALL profiles
     console.log("search-profiles: Fetching all profiles")
     const { data: allProfiles, error: profilesError } = await serviceSupabase
@@ -56,7 +59,10 @@ export async function GET(request: Request) {
     const results = authUsers
       .filter(authUser => {
         // Skip current user
-        if (authUser.id === user.id) return false
+        if (authUser.id === user.id) {
+          console.log(`search-profiles: Skipping current user ${authUser.email}`)
+          return false
+        }
 
         const email = authUser.email?.toLowerCase()
         const profile = profileMap.get(authUser.id)
@@ -66,14 +72,14 @@ export async function GET(request: Request) {
         const emailMatch = email?.includes(lowerQuery)
         const nameMatch = fullName?.includes(lowerQuery)
 
-        console.log(`search-profiles: Checking user ${authUser.email} - emailMatch: ${emailMatch}, nameMatch: ${nameMatch}`)
+        console.log(`search-profiles: Checking user ${authUser.email} (${authUser.id}) - emailMatch: ${emailMatch}, nameMatch: ${nameMatch}`)
 
         return emailMatch || nameMatch
       })
       .slice(0, 10)
       .map(authUser => {
         const profile = profileMap.get(authUser.id)
-        return {
+        const result = {
           id: authUser.id,
           full_name: profile?.full_name || authUser.user_metadata?.full_name || authUser.user_metadata?.name || null,
           avatar_url: profile?.avatar_url || null,
@@ -81,6 +87,8 @@ export async function GET(request: Request) {
           email: authUser.email,
           is_active: profile?.is_active ?? true
         }
+        console.log(`search-profiles: Including user ${authUser.email}:`, JSON.stringify(result))
+        return result
       })
 
     console.log("search-profiles: Final results count:", results.length)
