@@ -1,6 +1,5 @@
 
 import { NextResponse } from "next/server"
-import { ProfilesRepository } from "@/data/repositories/profiles-repository"
 import { createClient } from "@/lib/supabase-server"
 import { createServiceRoleClient } from "@/lib/supabase-service-role"
 
@@ -27,51 +26,83 @@ export async function GET(request: Request) {
       return NextResponse.json([])
     }
 
-    // First, fetch ALL auth users (to get emails)
-    console.log("search-profiles: Fetching auth users")
+    const lowerQuery = query.toLowerCase()
     const serviceSupabase = createServiceRoleClient()
-    const { data: authUsers } = await serviceSupabase.auth.admin.listUsers()
-    console.log("search-profiles: Found auth users count:", authUsers.users.length)
 
-    // Create a map of auth users by id
-    const authUsersMap = new Map()
-    authUsers.users.forEach(authUser => {
-      authUsersMap.set(authUser.id, authUser)
+    // 1. Fetch ALL auth users
+    console.log("search-profiles: Fetching auth users")
+    const { data: authUsersData } = await serviceSupabase.auth.admin.listUsers()
+    const authUsers = authUsersData.users
+    console.log("search-profiles: Found auth users count:", authUsers.length)
+
+    // 2. Filter auth users by email first
+    const matchingAuthUsers = authUsers.filter(authUser => 
+      authUser.email?.toLowerCase().includes(lowerQuery)
+    )
+    console.log("search-profiles: Auth users matching email:", matchingAuthUsers.length)
+
+    // 3. Get matching user IDs
+    const matchingUserIds = matchingAuthUsers.map(u => u.id)
+
+    // 4. Fetch all profiles, then filter
+    console.log("search-profiles: Fetching all profiles")
+    const { data: allProfiles, error: profilesError } = await serviceSupabase
+      .from("profiles")
+      .select("*")
+      .neq("id", user.id) // Exclude current user
+
+    if (profilesError) {
+      console.error("search-profiles: Error fetching profiles:", profilesError)
+    }
+    console.log("search-profiles: All profiles count:", allProfiles?.length || 0)
+
+    // 5. Create a map of profiles by ID
+    const profilesById = new Map()
+    allProfiles?.forEach(profile => {
+      profilesById.set(profile.id, profile)
     })
-    console.log("search-profiles: Auth users map created with keys:", Array.from(authUsersMap.keys()))
 
-    // Now fetch all team-role profiles (excluding current user)
-    console.log("search-profiles: Fetching profiles")
-    const profilesRepo = new ProfilesRepository()
-    const profiles = await profilesRepo.searchByEmail(query, user.id)
-    console.log("search-profiles: Found profiles count:", profiles.length)
-    console.log("search-profiles: Profiles data:", JSON.stringify(profiles, null, 2))
+    // 6. Build results from both sources
+    const results = []
+    
+    // First add users with matching emails (even if no profile)
+    for (const authUser of matchingAuthUsers) {
+      if (authUser.id === user.id) continue // Skip current user
+      
+      const profile = profilesById.get(authUser.id)
+      results.push({
+        id: authUser.id,
+        full_name: profile?.full_name || null,
+        avatar_url: profile?.avatar_url || null,
+        role: profile?.role || "team",
+        email: authUser.email
+      })
+    }
 
-    // For each profile, add the email, then filter by query
-    const results = profiles
-      .map(profile => {
-        const authUser = authUsersMap.get(profile.id)
-        const withEmail = {
-          ...profile,
-          email: authUser?.email || null
+    // Then add users with matching full names from profiles
+    if (allProfiles) {
+      for (const profile of allProfiles) {
+        if (profile.id === user.id) continue
+        if (matchingUserIds.includes(profile.id)) continue // Already added
+        
+        if (profile.full_name?.toLowerCase().includes(lowerQuery)) {
+          const authUser = authUsers.find(u => u.id === profile.id)
+          results.push({
+            ...profile,
+            email: authUser?.email || null
+          })
         }
-        console.log(`search-profiles: Mapped profile ${profile.id}:`, JSON.stringify(withEmail, null, 2))
-        return withEmail
-      })
-      .filter(profile => {
-        // Check if name OR email matches the query
-        const nameMatch = profile.full_name?.toLowerCase().includes(query.toLowerCase())
-        const emailMatch = profile.email?.toLowerCase().includes(query.toLowerCase())
-        console.log(`search-profiles: Filtering profile ${profile.id} - nameMatch: ${nameMatch}, emailMatch: ${emailMatch}`)
-        return nameMatch || emailMatch
-      })
-      .slice(0, 10) // Limit to 10 results
+      }
+    }
 
-    console.log("search-profiles: Final results count:", results.length)
-    console.log("search-profiles: Final results:", JSON.stringify(results, null, 2))
+    // Limit to 10 results
+    const finalResults = results.slice(0, 10)
+
+    console.log("search-profiles: Final results count:", finalResults.length)
+    console.log("search-profiles: Final results:", JSON.stringify(finalResults, null, 2))
     console.log("========== search-profiles API END (SUCCESS) ==========")
 
-    return NextResponse.json(results)
+    return NextResponse.json(finalResults)
   } catch (error) {
     console.error("search-profiles: Error searching profiles:", error)
     console.log("========== search-profiles API END (ERROR) ==========")
