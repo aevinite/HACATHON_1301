@@ -14,7 +14,6 @@ export interface Database {
           id: string
           full_name: string | null
           avatar_url: string | null
-          email?: string | null
           role: "admin" | "team" | "judge" | "organizer"
           is_active: boolean
           created_at: string
@@ -24,7 +23,6 @@ export interface Database {
           id: string
           full_name?: string | null
           avatar_url?: string | null
-          email?: string | null
           role?: "admin" | "team" | "judge" | "organizer"
           is_active?: boolean
           created_at?: string
@@ -34,7 +32,6 @@ export interface Database {
           id?: string
           full_name?: string | null
           avatar_url?: string | null
-          email?: string | null
           role?: "admin" | "team" | "judge" | "organizer"
           is_active?: boolean
           created_at?: string

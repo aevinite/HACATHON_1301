@@ -1,11 +1,10 @@
 
 "use client"
 
-import { useActionState, useEffect, useState } from "react"
-import { Users } from "lucide-react"
+import { useActionState, useEffect, useState, useCallback } from "react"
+import { Users, Check, ChevronsUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { joinHackathonAction } from "@/features/hackathons/server/join-action"
-import { getAvailableUsersForHackathonAction } from "@/features/hackathons/server/actions"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import type { Database } from "@/types/supabase"
@@ -14,10 +13,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
 
 type Hackathon = Database["public"]["Tables"]["hackathons"]["Row"]
 type Team = Database["public"]["Tables"]["teams"]["Row"]
-type Profile = Database["public"]["Tables"]["profiles"]["Row"]
+type Profile = Database["public"]["Tables"]["profiles"]["Row"] & { email?: string | null }
 
 interface JoinHackathonButtonProps {
   hackathonId: string
@@ -36,6 +49,7 @@ interface JoinActionState {
 interface MemberInput {
   id: number
   userId: string | null
+  selectedProfile: Profile | null
 }
 
 export function JoinHackathonButton({ hackathonId, isParticipating, hackathon, team }: JoinHackathonButtonProps) {
@@ -48,30 +62,13 @@ export function JoinHackathonButton({ hackathonId, isParticipating, hackathon, t
   const [teamName, setTeamName] = useState("")
   const [memberCount, setMemberCount] = useState("1")
   const [memberInputs, setMemberInputs] = useState<MemberInput[]>([])
-  const [availableUsers, setAvailableUsers] = useState<Profile[]>([])
-  const [loadingUsers, setLoadingUsers] = useState(false)
-
-  // Load available users when dialog opens
-  useEffect(() => {
-    async function loadAvailableUsers() {
-      if (isOpen) {
-        setLoadingUsers(true)
-        const result = await getAvailableUsersForHackathonAction(hackathonId)
-        if (result.success) {
-          setAvailableUsers(result.users)
-        }
-        setLoadingUsers(false)
-      }
-    }
-    loadAvailableUsers()
-  }, [isOpen, hackathonId])
 
   // Initialize member inputs when member count changes
   useEffect(() => {
     const count = parseInt(memberCount)
     const newInputs: MemberInput[] = []
     for (let i = 0; i < count - 1; i++) { // minus 1 because current user is already a member
-      newInputs.push({ id: i, userId: null })
+      newInputs.push({ id: i, userId: null, selectedProfile: null })
     }
     setMemberInputs(newInputs)
   }, [memberCount])
@@ -128,10 +125,112 @@ export function JoinHackathonButton({ hackathonId, isParticipating, hackathon, t
     formAction(formData)
   }
 
-  const updateMemberUserId = (index: number, userId: string) => {
+  const updateMember = (index: number, profile: Profile | null) => {
     const newInputs = [...memberInputs]
-    newInputs[index].userId = userId
+    newInputs[index] = {
+      ...newInputs[index],
+      userId: profile ? profile.id : null,
+      selectedProfile: profile
+    }
     setMemberInputs(newInputs)
+  }
+
+  const isUserIdSelected = (userId: string, currentIndex: number) => {
+    return memberInputs.some((input, idx) => idx !== currentIndex && input.userId === userId)
+  }
+
+  const MemberCombobox = ({ index }: { index: number }) => {
+    const [open, setOpen] = useState(false)
+    const [searchQuery, setSearchQuery] = useState("")
+    const [profiles, setProfiles] = useState<Profile[]>([])
+    const [loading, setLoading] = useState(false)
+
+    const searchProfiles = useCallback(async (q: string) => {
+      if (!q || q.length < 1) {
+        setProfiles([])
+        return
+      }
+      setLoading(true)
+      try {
+        const res = await fetch(`/api/profiles/search?q=${encodeURIComponent(q)}`)
+        if (res.ok) {
+          const data = await res.json()
+          // Filter out already selected users and current user
+          const filtered = data.filter((p: Profile) => !isUserIdSelected(p.id, index))
+          setProfiles(filtered)
+        }
+      } catch (err) {
+        console.error("Error searching profiles:", err)
+      } finally {
+        setLoading(false)
+      }
+    }, [index])
+
+    useEffect(() => {
+      const timeoutId = setTimeout(() => searchProfiles(searchQuery), 300)
+      return () => clearTimeout(timeoutId)
+    }, [searchQuery, searchProfiles])
+
+    return (
+      <div className="grid grid-cols-4 items-center gap-4">
+        <Label className="text-right text-sm">
+          Member {index + 1}
+        </Label>
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild className="col-span-3">
+            <Button
+              variant="secondary"
+              role="combobox"
+              aria-expanded={open}
+              className="w-full justify-between"
+            >
+              {memberInputs[index].selectedProfile 
+                ? memberInputs[index].selectedProfile.full_name || "Unknown"
+                : "Select a team member..."}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[400px] p-0">
+            <Command shouldFilter={false}>
+              <CommandInput 
+                placeholder="Search by email..." 
+                value={searchQuery}
+                onValueChange={setSearchQuery}
+              />
+              <CommandList>
+                <CommandEmpty>
+                  {loading ? "Searching..." : "No user found"}
+                </CommandEmpty>
+                <CommandGroup>
+                  {profiles.map((profile) => (
+                    <CommandItem
+                      key={profile.id}
+                      value={profile.id}
+                      onSelect={() => {
+                        updateMember(index, profile)
+                        setOpen(false)
+                        setSearchQuery("")
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          memberInputs[index].userId === profile.id ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      <div className="flex flex-col">
+                        <span>{profile.full_name || "Unknown"}</span>
+                        <span className="text-xs text-slate-400">{profile.email || "No email"}</span>
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+      </div>
+    )
   }
 
   if (isParticipating) {
@@ -219,43 +318,11 @@ export function JoinHackathonButton({ hackathonId, isParticipating, hackathon, t
               
               {/* Member Select Dropdowns */}
               {memberInputs.length > 0 && (
-                <div className="col-span-4 mt-4 pt-4 border-t border-slate-700">
+                <div className="col-span-4 mt-4 pt-4 border-t border-slate-700 space-y-4">
                   <h4 className="font-semibold mb-3 text-white">Team Members</h4>
-                  {loadingUsers && (
-                    <p className="text-sm text-slate-400 mb-3">Loading available users...</p>
-                  )}
-                  <div className="space-y-3">
-                    {memberInputs.map((member, index) => (
-                      <div key={member.id} className="grid grid-cols-4 items-center gap-4">
-                        <Label className="text-right text-sm">
-                          Member {index + 1}
-                        </Label>
-                        <Select 
-                          value={member.userId || ""} 
-                          onValueChange={(value) => updateMemberUserId(index, value)}
-                        >
-                          <SelectTrigger className="col-span-3">
-                            <SelectValue placeholder="Select a user" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableUsers.map((user) => {
-                              // Check if this user is already selected in another input
-                              const isAlreadySelected = memberInputs.some(
-                                (input, idx) => idx !== index && input.userId === user.id
-                              )
-                              return (
-                                !isAlreadySelected && (
-                                  <SelectItem key={user.id} value={user.id}>
-                                    {user.full_name || "Unknown"}
-                                  </SelectItem>
-                                )
-                              )
-                            })}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ))}
-                  </div>
+                  {memberInputs.map((_, index) => (
+                    <MemberCombobox key={index} index={index} />
+                  ))}
                 </div>
               )}
               
