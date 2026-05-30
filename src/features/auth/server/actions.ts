@@ -210,12 +210,14 @@ export async function verifyOtpAction(prevState: { success?: boolean; error?: st
 
     console.log("verifyOtpAction: OTP verified! User:", data.user?.id)
 
-    // Create profile if not exists
+    // Create profile and user record if not exists
     if (data.user) {
       const profilesRepo = new ProfilesRepository()
       const existingProfile = await profilesRepo.findByUserId(data.user.id)
+      const fullName = data.user.user_metadata?.full_name || null
+      
+      // Create profile
       if (!existingProfile) {
-        const fullName = data.user.user_metadata?.full_name || null
         const { error: insertError } = await supabase
           .from("profiles")
           .insert({
@@ -228,6 +230,22 @@ export async function verifyOtpAction(prevState: { success?: boolean; error?: st
         if (insertError) {
           console.log("verifyOtpAction: Error creating profile:", insertError)
         }
+      }
+      
+      // Create user record
+      const { error: userError } = await supabase
+        .from("users")
+        .insert({
+          id: data.user.id,
+          email: data.user.email,
+          full_name: fullName,
+          signup_source: "email",
+        })
+        .select()
+        .single()
+      
+      if (userError) {
+        console.log("verifyOtpAction: Error creating user record:", userError)
       }
     }
 
