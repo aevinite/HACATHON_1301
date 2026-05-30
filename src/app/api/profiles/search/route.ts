@@ -29,80 +29,50 @@ export async function GET(request: Request) {
     const lowerQuery = query.toLowerCase()
     const serviceSupabase = createServiceRoleClient()
 
-    // 1. Fetch ALL auth users
-    console.log("search-profiles: Fetching auth users")
+    // 1. First try to search profiles with the new email column
+    console.log("search-profiles: Searching profiles with email column")
+    const { data: profilesFromDb, error: profilesError } = await serviceSupabase
+      .from("profiles")
+      .select("*")
+      .neq("id", user.id) // Exclude current user
+      .or(`full_name.ilike.%${lowerQuery}%,email.ilike.%${lowerQuery}%`)
+      .limit(10)
+
+    if (profilesError) {
+      console.error("search-profiles: Error searching profiles:", profilesError)
+    }
+
+    if (profilesFromDb && profilesFromDb.length > 0) {
+      console.log("search-profiles: Found profiles in database:", profilesFromDb.length)
+      console.log("========== search-profiles API END (SUCCESS) ==========")
+      return NextResponse.json(profilesFromDb)
+    }
+
+    // 2. Fallback: If no profiles found, check auth users (for users without profiles yet)
+    console.log("search-profiles: Falling back to auth users search")
     const { data: authUsersData } = await serviceSupabase.auth.admin.listUsers()
     const authUsers = authUsersData.users
     console.log("search-profiles: Found auth users count:", authUsers.length)
 
-    // 2. Filter auth users by email first
-    const matchingAuthUsers = authUsers.filter(authUser => 
-      authUser.email?.toLowerCase().includes(lowerQuery)
-    )
-    console.log("search-profiles: Auth users matching email:", matchingAuthUsers.length)
-
-    // 3. Get matching user IDs
-    const matchingUserIds = matchingAuthUsers.map(u => u.id)
-
-    // 4. Fetch all profiles, then filter
-    console.log("search-profiles: Fetching all profiles")
-    const { data: allProfiles, error: profilesError } = await serviceSupabase
-      .from("profiles")
-      .select("*")
-      .neq("id", user.id) // Exclude current user
-
-    if (profilesError) {
-      console.error("search-profiles: Error fetching profiles:", profilesError)
-    }
-    console.log("search-profiles: All profiles count:", allProfiles?.length || 0)
-
-    // 5. Create a map of profiles by ID
-    const profilesById = new Map()
-    allProfiles?.forEach(profile => {
-      profilesById.set(profile.id, profile)
-    })
-
-    // 6. Build results from both sources
-    const results = []
-    
-    // First add users with matching emails (even if no profile)
-    for (const authUser of matchingAuthUsers) {
-      if (authUser.id === user.id) continue // Skip current user
-      
-      const profile = profilesById.get(authUser.id)
-      results.push({
+    const results = authUsers
+      .filter(authUser => 
+        authUser.id !== user.id && 
+        authUser.email?.toLowerCase().includes(lowerQuery)
+      )
+      .slice(0, 10)
+      .map(authUser => ({
         id: authUser.id,
-        full_name: profile?.full_name || null,
-        avatar_url: profile?.avatar_url || null,
-        role: profile?.role || "team",
+        full_name: authUser.user_metadata?.full_name || null,
+        avatar_url: null,
+        role: "team",
         email: authUser.email
-      })
-    }
+      }))
 
-    // Then add users with matching full names from profiles
-    if (allProfiles) {
-      for (const profile of allProfiles) {
-        if (profile.id === user.id) continue
-        if (matchingUserIds.includes(profile.id)) continue // Already added
-        
-        if (profile.full_name?.toLowerCase().includes(lowerQuery)) {
-          const authUser = authUsers.find(u => u.id === profile.id)
-          results.push({
-            ...profile,
-            email: authUser?.email || null
-          })
-        }
-      }
-    }
-
-    // Limit to 10 results
-    const finalResults = results.slice(0, 10)
-
-    console.log("search-profiles: Final results count:", finalResults.length)
-    console.log("search-profiles: Final results:", JSON.stringify(finalResults, null, 2))
+    console.log("search-profiles: Final results count:", results.length)
+    console.log("search-profiles: Final results:", JSON.stringify(results, null, 2))
     console.log("========== search-profiles API END (SUCCESS) ==========")
 
-    return NextResponse.json(finalResults)
+    return NextResponse.json(results)
   } catch (error) {
     console.error("search-profiles: Error searching profiles:", error)
     console.log("========== search-profiles API END (ERROR) ==========")
