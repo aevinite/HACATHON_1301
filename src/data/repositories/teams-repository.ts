@@ -102,6 +102,9 @@ export class TeamsRepository extends BaseRepository<Team> {
 
   async createWithMember(team: Omit<TeamInsert, "id" | "created_at" | "updated_at">, userId: string): Promise<Team> {
     const supabase = await this.getClient()
+    console.log("=== createWithMember ===")
+    console.log("Creating team with data:", team)
+    console.log("Adding user as member with user_id:", userId)
     
     // Create the team
     const { data: createdTeam, error: teamError } = await supabase
@@ -110,17 +113,26 @@ export class TeamsRepository extends BaseRepository<Team> {
       .select("*")
       .single()
 
-    if (teamError) throw teamError
+    if (teamError) {
+      console.error("Team creation error:", teamError)
+      throw teamError
+    }
+    console.log("Created team successfully:", createdTeam)
 
     // Add the user as a team member
-    const { error: memberError } = await supabase
+    const { data: createdMember, error: memberError } = await supabase
       .from("team_members")
       .insert({
         team_id: createdTeam.id,
         user_id: userId,
       })
+      .select("*")
 
-    if (memberError) throw memberError
+    if (memberError) {
+      console.error("Member insertion error:", memberError)
+      throw memberError
+    }
+    console.log("Created team member successfully:", createdMember)
 
     return createdTeam
   }

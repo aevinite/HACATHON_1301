@@ -153,7 +153,9 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
               <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
-                <span className="text-white text-xs font-bold">{getInitials(leaderProfile?.full_name)}</span>
+                <span className="text-white text-xs font-bold">
+                  {leaderProfile?.full_name ? getInitials(leaderProfile.full_name) : "U"}
+                </span>
               </div>
               <div>
                 <p className="text-blue-300 font-medium text-sm">{leaderProfile?.full_name || "Team Leader"}</p>
@@ -172,7 +174,9 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
                 {members.map((member) => (
                   <div key={member.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
                     <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">{getInitials(member.profiles?.full_name)}</span>
+                      <span className="text-white text-xs font-bold">
+                        {member.profiles?.full_name ? getInitials(member.profiles.full_name) : "M"}
+                      </span>
                     </div>
                     <div>
                       <p className="text-sm font-medium">{member.profiles?.full_name || "Member"}</p>
