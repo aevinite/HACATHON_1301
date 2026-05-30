@@ -80,74 +80,49 @@ export async function joinHackathonAction(prevState: JoinActionState, formData: 
     
     // Get all profiles and auth users first
     const allProfiles = await profilesRepo.findAll()
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    console.log("All profiles in DB:", allProfiles.map(p => ({ id: p.id, email: p.email, full_name: p.full_name })))
     
-    // Fetch all auth users
-    let allAuthUsers: any[] = []
-    try {
-      const response = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
-        method: "GET",
-        headers: {
-          "apikey": serviceRoleKey,
-          "Authorization": `Bearer ${serviceRoleKey}`,
-          "Content-Type": "application/json",
-        },
-      })
-      
-      if (response.ok) {
-        const usersData = await response.json()
-        allAuthUsers = usersData.users || []
-      }
-    } catch (error) {
-      console.error("Failed to fetch auth users:", error)
-    }
+    // We don't need to fetch auth users - let's just search by email in profiles!
+    // We'll also check if profiles have an email field (since some dbs might have email in profiles)
     
     for (let i = 0; i < memberCount - 1; i++) { // minus 1 for current user
-      const memberIdKey = "member_id_" + i
       const memberEmailKey = "member_email_" + i
-      const memberId = formData.get(memberIdKey) as string
       const memberEmail = formData.get(memberEmailKey) as string
-      console.log(`Member ${i}:`, { memberIdKey, memberId, memberEmailKey, memberEmail })
+      console.log(`Member ${i} email:`, memberEmail)
       
-      let userIdToAdd = null
-      
-      if (memberId) {
-        userIdToAdd = memberId
-      } else if (memberEmail && memberEmail.trim() !== "") {
-        // If we only have an email, try to find the profile by email
-        console.log(`Looking up profile by email:`, memberEmail)
-        
-        // Find the auth user first
-        const matchingAuthUser = allAuthUsers.find((u: any) => 
-          u.email && u.email.toLowerCase() === memberEmail.toLowerCase()
+      if (memberEmail && memberEmail.trim() !== "") {
+        // Try to find profile by email
+        const matchingProfile = allProfiles.find(p => 
+          p.email && p.email.toLowerCase() === memberEmail.toLowerCase()
         )
         
-        if (matchingAuthUser) {
-          // Now check if there's a profile for this user
-          const matchingProfile = allProfiles.find(p => p.id === matchingAuthUser.id)
-          if (matchingProfile) {
-            userIdToAdd = matchingProfile.id
+        if (matchingProfile) {
+          console.log(`Found profile:`, matchingProfile.id, matchingProfile.email)
+          try {
+            console.log(`Adding member ${i} to team ${createdTeam.id} with user_id:`, matchingProfile.id)
+            await supabaseClient
+              .from("team_members")
+              .insert({
+                team_id: createdTeam.id,
+                user_id: matchingProfile.id,
+              })
+            console.log(`Successfully added member ${i}`)
+          } catch (error) {
+            console.error("Error adding team member:", error)
           }
-        }
-      }
-      
-      if (userIdToAdd) {
-        // If we have a member ID (user is registered)
-        try {
-          console.log(`Adding member ${i} with user_id:`, userIdToAdd)
-          await supabaseClient
-            .from("team_members")
-            .insert({
-              team_id: createdTeam.id,
-              user_id: userIdToAdd,
-            })
-          console.log(`Successfully added member ${i}`)
-        } catch (error) {
-          console.error("Error adding team member:", error)
+        } else {
+          console.log(`No profile found for email:`, memberEmail)
         }
       }
     }
+    
+    // Let's verify the team members were added!
+    const verifyMembers = await supabaseClient
+      .from("team_members")
+      .select("*, profiles(*)")
+      .eq("team_id", createdTeam.id)
+    console.log("=== VERIFYING TEAM MEMBERS ===")
+    console.log("Team members after add:", verifyMembers.data)
 
     revalidatePath("/dashboard/hackathons/" + hackathonId)
     return { teamId: createdTeam.id, hackathonId, isNewTeam: true }

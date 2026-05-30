@@ -32,8 +32,13 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
   }
 
   const hackathon = await hackathonsRepo.findById(team.hackathon_id)
-  const members = await teamMembersRepo.findByTeamId(id)
-  console.log("=== TEAM MEMBERS:", members)
+  const allTeamMembers = await teamMembersRepo.findByTeamId(id)
+  console.log("=== ALL TEAM MEMBERS:", allTeamMembers)
+  
+  // Filter out leader from members (since we show leader separately)
+  const members = allTeamMembers.filter(m => m.user_id !== team.leader_id)
+  console.log("=== MEMBERS (excluding leader):", members)
+  
   const project = await projectsRepo.findByTeamId(id)
   const leaderProfile = team.leader_id ? await profilesRepo.findById(team.leader_id) : null
   
@@ -122,7 +127,7 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
             </CardTitle>
             <EditTeamMembers 
               team={team} 
-              members={members} 
+              members={allTeamMembers} 
               leaderProfile={leaderProfile} 
               isLeader={canEdit} 
             />
