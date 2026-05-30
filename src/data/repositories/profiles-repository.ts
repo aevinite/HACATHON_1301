@@ -112,7 +112,6 @@ export class ProfilesRepository extends BaseRepository<Profile> {
     let dbQuery = supabase
       .from("profiles")
       .select("*")
-      .eq("role", "team")
 
     if (excludeUserId) {
       dbQuery = dbQuery.neq("id", excludeUserId)
