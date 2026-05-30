@@ -78,45 +78,70 @@ export async function joinHackathonAction(prevState: JoinActionState, formData: 
     const memberCount = memberCountStr ? parseInt(memberCountStr) : 1
     console.log("Member count from form:", memberCount)
     
-    // Get all profiles and auth users first
+    // Get all profiles and auth users first (same as addTeamMemberAction!)
     const allProfiles = await profilesRepo.findAll()
-    console.log("All profiles in DB:", allProfiles.map(p => ({ id: p.id, email: p.email, full_name: p.full_name })))
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    let foundUserId: string | null = null
     
-    // We don't need to fetch auth users - let's just search by email in profiles!
-    // We'll also check if profiles have an email field (since some dbs might have email in profiles)
-    
-    for (let i = 0; i < memberCount - 1; i++) { // minus 1 for current user
+    for (let i = 0; i < memberCount - 1; i++) { // minus 1 for current user    
       const memberEmailKey = "member_email_" + i
       const memberEmail = formData.get(memberEmailKey) as string
       console.log(`Member ${i} email:`, memberEmail)
       
+      foundUserId = null
+      
       if (memberEmail && memberEmail.trim() !== "") {
-        // Try to find profile by email
-        const matchingProfile = allProfiles.find(p => 
-          p.email && p.email.toLowerCase() === memberEmail.toLowerCase()
-        )
+        // Use service role to list all users and find by email (just like addTeamMemberAction!)
+        try {
+          const response = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
+            method: "GET",
+            headers: {
+              "apikey": serviceRoleKey,
+              "Authorization": `Bearer ${serviceRoleKey}`,
+              "Content-Type": "application/json",
+            },
+          })
+          
+          if (response.ok) {
+            const usersData = await response.json()
+            const authUsers = usersData.users || []
+            
+            const matchingAuthUser = authUsers.find((u: any) => 
+              u.email && u.email.toLowerCase() === memberEmail.toLowerCase()
+            )
+            
+            if (matchingAuthUser) {
+              const matchingProfile = allProfiles.find(p => p.id === matchingAuthUser.id)
+              if (matchingProfile) {
+                foundUserId = matchingProfile.id
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Failed to fetch auth users:", error)
+        }
         
-        if (matchingProfile) {
-          console.log(`Found profile:`, matchingProfile.id, matchingProfile.email)
+        if (foundUserId) {
+          console.log(`Adding member ${i} to team ${createdTeam.id} with user_id:`, foundUserId)
           try {
-            console.log(`Adding member ${i} to team ${createdTeam.id} with user_id:`, matchingProfile.id)
             await supabaseClient
               .from("team_members")
               .insert({
                 team_id: createdTeam.id,
-                user_id: matchingProfile.id,
+                user_id: foundUserId,
               })
             console.log(`Successfully added member ${i}`)
           } catch (error) {
             console.error("Error adding team member:", error)
           }
         } else {
-          console.log(`No profile found for email:`, memberEmail)
+          console.log(`No user/profile found for email:`, memberEmail)
         }
       }
     }
     
-    // Let's verify the team members were added!
+    // Verify team members were added!
     const verifyMembers = await supabaseClient
       .from("team_members")
       .select("*, profiles(*)")
