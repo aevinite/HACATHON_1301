@@ -26,47 +26,62 @@ export async function GET(request: Request) {
       return NextResponse.json([])
     }
 
-    const lowerQuery = query.toLowerCase()
+    const lowerQuery = query.toLowerCase().trim()
     const serviceSupabase = createServiceRoleClient()
 
-    // 1. First try to search profiles with the new email column
-    console.log("search-profiles: Searching profiles with email column")
-    const { data: profilesFromDb, error: profilesError } = await serviceSupabase
-      .from("profiles")
-      .select("*")
-      .neq("id", user.id) // Exclude current user
-      .or(`full_name.ilike.%${lowerQuery}%,email.ilike.%${lowerQuery}%`)
-      .limit(10)
-
-    if (profilesError) {
-      console.error("search-profiles: Error searching profiles:", profilesError)
-    }
-
-    if (profilesFromDb && profilesFromDb.length > 0) {
-      console.log("search-profiles: Found profiles in database:", profilesFromDb.length)
-      console.log("========== search-profiles API END (SUCCESS) ==========")
-      return NextResponse.json(profilesFromDb)
-    }
-
-    // 2. Fallback: If no profiles found, check auth users (for users without profiles yet)
-    console.log("search-profiles: Falling back to auth users search")
+    // 1. Get ALL auth users first
+    console.log("search-profiles: Fetching all auth users")
     const { data: authUsersData } = await serviceSupabase.auth.admin.listUsers()
     const authUsers = authUsersData.users
-    console.log("search-profiles: Found auth users count:", authUsers.length)
+    console.log("search-profiles: Total auth users:", authUsers.length)
 
+    // 2. Get ALL profiles
+    console.log("search-profiles: Fetching all profiles")
+    const { data: allProfiles, error: profilesError } = await serviceSupabase
+      .from("profiles")
+      .select("*")
+
+    if (profilesError) {
+      console.error("search-profiles: Error fetching profiles:", profilesError)
+    }
+
+    // 3. Create a map of profiles by ID for quick lookup
+    const profileMap = new Map()
+    allProfiles?.forEach(profile => {
+      profileMap.set(profile.id, profile)
+    })
+    console.log("search-profiles: Profiles in database:", allProfiles?.length || 0)
+
+    // 4. Filter auth users to find matches
     const results = authUsers
-      .filter(authUser => 
-        authUser.id !== user.id && 
-        authUser.email?.toLowerCase().includes(lowerQuery)
-      )
+      .filter(authUser => {
+        // Skip current user
+        if (authUser.id === user.id) return false
+
+        const email = authUser.email?.toLowerCase()
+        const profile = profileMap.get(authUser.id)
+        const fullName = profile?.full_name?.toLowerCase() || authUser.user_metadata?.full_name?.toLowerCase() || authUser.user_metadata?.name?.toLowerCase()
+
+        // Check if email or name matches
+        const emailMatch = email?.includes(lowerQuery)
+        const nameMatch = fullName?.includes(lowerQuery)
+
+        console.log(`search-profiles: Checking user ${authUser.email} - emailMatch: ${emailMatch}, nameMatch: ${nameMatch}`)
+
+        return emailMatch || nameMatch
+      })
       .slice(0, 10)
-      .map(authUser => ({
-        id: authUser.id,
-        full_name: authUser.user_metadata?.full_name || null,
-        avatar_url: null,
-        role: "team",
-        email: authUser.email
-      }))
+      .map(authUser => {
+        const profile = profileMap.get(authUser.id)
+        return {
+          id: authUser.id,
+          full_name: profile?.full_name || authUser.user_metadata?.full_name || authUser.user_metadata?.name || null,
+          avatar_url: profile?.avatar_url || null,
+          role: profile?.role || "team",
+          email: authUser.email,
+          is_active: profile?.is_active ?? true
+        }
+      })
 
     console.log("search-profiles: Final results count:", results.length)
     console.log("search-profiles: Final results:", JSON.stringify(results, null, 2))
