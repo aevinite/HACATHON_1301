@@ -10,6 +10,47 @@ export class ProfilesRepository extends BaseRepository<Profile> {
     super("profiles")
   }
 
+  async findAvailableForHackathon(hackathonId: string, excludeUserId: string): Promise<Profile[]> {
+    const supabase = await this.getClient()
+    
+    // First get all users that are already in teams for this hackathon
+    const { data: teams } = await supabase
+      .from("teams")
+      .select("id")
+      .eq("hackathon_id", hackathonId)
+    
+    const teamIds = teams?.map(t => t.id) || []
+    
+    // Get all users that are already in any of these teams
+    let occupiedUserIds: string[] = []
+    if (teamIds.length > 0) {
+      const { data: teamMembers } = await supabase
+        .from("team_members")
+        .select("user_id")
+        .in("team_id", teamIds)
+      
+      occupiedUserIds = teamMembers?.map(tm => tm.user_id) || []
+    }
+    
+    // Also exclude the current user
+    occupiedUserIds.push(excludeUserId)
+    
+    // Get all profiles except those in occupiedUserIds and only team role
+    let query = supabase
+      .from("profiles")
+      .select("*")
+      .eq("role", "team")
+    
+    if (occupiedUserIds.length > 0) {
+      query = query.not("id", "in", `(${occupiedUserIds.join(',')})`)
+    }
+    
+    const { data } = await query
+      .order("created_at", { ascending: false })
+
+    return (data as Profile[]) || []
+  }
+
   async findByUserId(userId: string): Promise<Profile | null> {
     const supabase = await this.getClient()
     const { data } = await supabase

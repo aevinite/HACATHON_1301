@@ -32,13 +32,8 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
   }
 
   const hackathon = await hackathonsRepo.findById(team.hackathon_id)
-  const allTeamMembers = await teamMembersRepo.findByTeamId(id)
-  console.log("=== ALL TEAM MEMBERS:", allTeamMembers)
-  
-  // Filter out leader from members (since we show leader separately)
-  const members = allTeamMembers.filter(m => m.user_id !== team.leader_id)
-  console.log("=== MEMBERS (excluding leader):", members)
-  
+  const members = await teamMembersRepo.findByTeamId(id)
+  console.log("=== TEAM MEMBERS:", members)
   const project = await projectsRepo.findByTeamId(id)
   const leaderProfile = team.leader_id ? await profilesRepo.findById(team.leader_id) : null
   
@@ -80,6 +75,23 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
       </div>
 
       <div className="max-w-4xl mx-auto grid gap-6">
+        {/* Debug Box */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Debug Info</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xs overflow-auto max-h-48 bg-black/30 p-3 rounded">
+              <pre>{JSON.stringify({
+                leaderProfile,
+                members,
+                team,
+                leader_id: team.leader_id
+              }, null, 2)}</pre>
+            </div>
+          </CardContent>
+        </Card>
+        
         {/* Team Overview */}
         <Card>
           <CardHeader>
@@ -127,7 +139,7 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
             </CardTitle>
             <EditTeamMembers 
               team={team} 
-              members={allTeamMembers} 
+              members={members} 
               leaderProfile={leaderProfile} 
               isLeader={canEdit} 
             />
@@ -135,12 +147,10 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
               <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
-                <span className="text-white text-xs font-bold">
-                  {leaderProfile?.full_name ? getInitials(leaderProfile.full_name) : "U"}
-                </span>
+                <span className="text-white text-xs font-bold">{getInitials(leaderProfile?.full_name)}</span>
               </div>
               <div>
-                <p className="text-blue-300 font-medium text-sm">{leaderProfile?.full_name || "Team Leader"}</p>
+                <p className="text-blue-300 font-medium text-sm">{leaderProfile?.full_name || "Leader"}</p>
                 <p className="text-xs text-muted-foreground">Team Leader</p>
               </div>
               <Badge className="ml-auto text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20">
@@ -156,14 +166,12 @@ export default async function TeamDetailPage({ params, searchParams }: { params:
                 {members.map((member) => (
                   <div key={member.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
                     <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">
-                        {member.profiles?.full_name ? getInitials(member.profiles.full_name) : "M"}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">{member.profiles?.full_name || "Member"}</p>
-                    </div>
+                    <span className="text-white text-xs font-bold">{getInitials(member.profiles?.full_name)}</span>
                   </div>
+                  <div>
+                    <p className="text-sm font-medium">{member.profiles?.full_name || "Member"}</p>
+                  </div>
+                </div>
                 ))}
               </div>
             )}

@@ -934,3 +934,26 @@ export async function getProblemStatementSignedUrlAction(
   
   return { success: true, url: signedUrl }
 }
+
+export async function getAvailableUsersForHackathonAction(
+  hackathonId: string
+): Promise<{ success: true; users: any[] } | { success: false; error: string }> {
+  console.log("========== getAvailableUsersForHackathonAction START ==========")
+  
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    console.log("getAvailableUsersForHackathonAction: No user")
+    console.log("========== getAvailableUsersForHackathonAction END (NO USER) ==========")
+    return { success: false, error: "User not authenticated" }
+  }
+  
+  const profilesRepo = new ProfilesRepository()
+  const availableUsers = await profilesRepo.findAvailableForHackathon(hackathonId, user.id)
+  
+  console.log("getAvailableUsersForHackathonAction: Found", availableUsers.length, "available users")
+  console.log("========== getAvailableUsersForHackathonAction END (SUCCESS) ==========")
+  
+  return { success: true, users: availableUsers }
+}
