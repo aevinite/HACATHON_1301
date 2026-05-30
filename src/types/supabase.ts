@@ -455,38 +455,6 @@ export interface Database {
           created_at?: string
         }
       }
-      users: {
-        Row: {
-          id: string
-          email: string
-          full_name: string | null
-          signup_source: string | null
-          signup_ip: string | null
-          user_agent: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id: string
-          email: string
-          full_name?: string | null
-          signup_source?: string | null
-          signup_ip?: string | null
-          user_agent?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          email?: string
-          full_name?: string | null
-          signup_source?: string | null
-          signup_ip?: string | null
-          user_agent?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-      }
     }
     Views: {
       [_ in never]: never
