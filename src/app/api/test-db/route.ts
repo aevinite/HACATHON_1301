@@ -1,6 +1,7 @@
 
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase-server"
+import { createServiceRoleClient } from "@/lib/supabase-service-role"
 
 export async function GET() {
   const results: Record<string, any> = {}
@@ -9,6 +10,7 @@ export async function GET() {
   results.supabase_url = process.env.NEXT_PUBLIC_SUPABASE_URL || null
 
   const supabase = await createClient()
+  const serviceSupabase = createServiceRoleClient()
 
   // Test profiles table
   try {
@@ -68,6 +70,14 @@ export async function GET() {
     results.team_members = { success: !error, data, error: error?.message || null }
   } catch (e: any) {
     results.team_members = { success: false, error: e.message }
+  }
+
+  // Test auth users
+  try {
+    const { data: authUsers } = await serviceSupabase.auth.admin.listUsers()
+    results.auth_users = { success: true, count: authUsers.users.length, data: authUsers.users }
+  } catch (e: any) {
+    results.auth_users = { success: false, error: e.message }
   }
 
   return NextResponse.json(results)
